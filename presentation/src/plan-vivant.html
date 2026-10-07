@@ -1,0 +1,622 @@
+<title>Plan Vivant Tocqueville</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : une suite de « planches » façon dossier de géomètre — cartouche en tête, contenu sur feuille, pastilles et cotes comme vocabulaire graphique. */
+:root{
+  --paper:#ECEFF1; --sheet:#FAFBFB; --ink:#18202B; --muted:#58636F; --rule:#C6CED5;
+  --accent:#D9531A;          /* orange chantier */
+  --cobalt:#2E44D6;          /* nouvelle version */
+  --accent-ink:#FFFFFF;
+  /* palette du géomètre (le plan reste une feuille imprimée dans les deux thèmes) */
+  --p-blue:#C7E1EA; --p-purple:#ABA9C5; --p-green:#E4EBC7; --p-pink:#EBCFC7; --p-yellow:#FCFD81;
+  --p-wall:#9FA3A6; --p-bg:#FFFFFF; --p-ink:#141414; --p-veil:#FFFFFF;
+  --dpe-a:#009C6D; --dpe-b:#52B153; --dpe-c:#A5CC74; --dpe-d:#F4E70F; --dpe-e:#F0B50F; --dpe-f:#EB8235; --dpe-g:#D7221F; --dpe-none:#D9DDE0;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --step--1:clamp(.78rem,.75rem + .15vw,.86rem);
+  --step-0:clamp(.95rem,.9rem + .25vw,1.06rem);
+  --step-1:clamp(1.15rem,1.05rem + .5vw,1.4rem);
+  --step-2:clamp(1.5rem,1.25rem + 1.2vw,2.2rem);
+  --step-3:clamp(2.1rem,1.6rem + 2.6vw,3.9rem);
+  --step-4:clamp(2.8rem,1.8rem + 5vw,6.4rem);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#11161C; --sheet:#182029; --ink:#E5E9ED; --muted:#98A3AE; --rule:#2D3742;
+  --accent:#FF7A3F; --cobalt:#7B8DFF; --accent-ink:#11161C; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#11161C; --sheet:#182029; --ink:#E5E9ED; --muted:#98A3AE; --rule:#2D3742;
+  --accent:#FF7A3F; --cobalt:#7B8DFF; --accent-ink:#11161C; color-scheme:dark }
+
+*{box-sizing:border-box}
+html{scroll-snap-type:y proximity;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:var(--step-0);line-height:1.55;padding-inline:clamp(16px,4vw,56px);padding-block:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.02}
+h2{font-size:var(--step-3);font-weight:800;font-stretch:112%;letter-spacing:-.01em}
+h3{font-size:var(--step-1);font-weight:700;font-stretch:100%}
+p{margin:0;max-width:65ch}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--f-mono);font-size:var(--step--1);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+a{color:var(--cobalt)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ——— planches ——— */
+.planche{min-height:100svh;scroll-snap-align:start;display:flex;flex-direction:column;gap:clamp(20px,3vw,40px);padding-block:clamp(28px,5vh,64px);max-width:1240px;margin-inline:auto;border-bottom:1px solid var(--rule)}
+.cartouche{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;border-top:2px solid var(--ink);padding-top:10px}
+.cartouche .num{font-family:var(--f-mono);font-weight:500;font-size:var(--step--1);color:var(--accent);letter-spacing:.08em}
+.cartouche .ttl{font-family:var(--f-mono);font-size:var(--step--1);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.cartouche .sp{flex:1}
+.lead{font-size:var(--step-1);color:var(--muted);max-width:60ch}
+
+/* ——— couverture ——— */
+.cover{justify-content:space-between}
+.cover h1{font-size:var(--step-4);font-weight:900;font-stretch:125%;letter-spacing:-.02em;line-height:.92}
+.cover h1 span{display:block;font-stretch:62%;font-weight:500;color:var(--muted);letter-spacing:0;font-size:.42em;margin-top:.35em}
+.cover-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:end}
+@media (max-width:860px){.cover-grid{grid-template-columns:1fr}}
+.title-block{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1.5px solid var(--ink);font-family:var(--f-mono);font-size:var(--step--1)}
+.title-block div{padding:8px 10px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:2px;min-width:0}
+.title-block div:last-child{border-right:0}
+.title-block b{font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.title-block small{color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-size:.72rem}
+@media (max-width:520px){.title-block{grid-template-columns:repeat(2,minmax(0,1fr))}.title-block div:nth-child(2){border-right:0}.title-block div:nth-child(-n+2){border-bottom:1px solid var(--rule)}}
+.strip{width:100%;height:auto;display:block;border:1px solid var(--rule);background:var(--p-bg);border-radius:2px}
+
+/* ——— demande ——— */
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,2.4vw,32px)}
+@media (max-width:860px){.three{grid-template-columns:1fr}}
+.need{display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid var(--rule)}
+.need .pastille{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-family:var(--f-mono);font-weight:500;background:var(--sheet)}
+.need q{font-style:italic;color:var(--muted);quotes:"« " " »"}
+.received{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+.doc{background:var(--sheet);border:1px solid var(--rule);padding:14px 16px;display:flex;gap:14px;align-items:flex-start}
+.doc .ext{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;padding:3px 6px;border:1px solid var(--ink);flex:none}
+.doc p{font-size:var(--step--1);color:var(--muted)}
+
+/* ——— constats ——— */
+.findings{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(20px,3vw,44px)}
+@media (max-width:900px){.findings{grid-template-columns:1fr}}
+.finding{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;padding-block:14px;border-bottom:1px solid var(--rule)}
+.finding .big{font-family:var(--f-display);font-weight:800;font-stretch:80%;font-size:var(--step-2);line-height:1;grid-row:span 2;min-width:3.2ch;color:var(--accent);font-variant-numeric:tabular-nums}
+.finding p{font-size:var(--step--1);color:var(--muted)}
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+figure img{border:1px solid var(--rule);display:block;width:100%}
+figcaption{font-size:var(--step--1);color:var(--muted)}
+.decode{display:flex;flex-wrap:wrap;gap:6px;font-family:var(--f-mono);font-size:var(--step-1);align-items:flex-start}
+.decode span{display:flex;flex-direction:column;align-items:center;gap:4px}
+.decode b{font-weight:500;padding:4px 8px;background:var(--sheet);border:1px solid var(--ink)}
+.decode small{font-family:var(--f-body);font-size:.72rem;color:var(--muted);text-align:center;max-width:12ch;line-height:1.25}
+
+/* ——— démo ——— */
+.demo{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden;flex-wrap:wrap}
+.seg button{font:500 var(--step--1)/1 var(--f-body);background:var(--sheet);color:var(--ink);border:0;border-right:1px solid var(--rule);padding:9px 12px;cursor:pointer;display:inline-flex;gap:7px;align-items:center}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg button:disabled{opacity:.45;cursor:not-allowed}
+.sw{width:14px;height:14px;border:1px solid var(--p-ink);display:inline-block;flex:none}
+.sw.occ{background:linear-gradient(90deg,var(--p-blue) 0 33%,var(--p-pink) 0 66%,var(--p-green) 0)}
+.sw.vide{background:var(--p-veil)}
+.sw.trav{background:repeating-linear-gradient(45deg,var(--p-yellow) 0 4px,var(--p-ink) 4px 7px)}
+.sw.nouv{background:var(--cobalt)}
+.check{display:inline-flex;gap:8px;align-items:center;font-size:var(--step--1);cursor:pointer}
+.check input{accent-color:var(--cobalt);width:16px;height:16px}
+.planwrap{position:relative;background:var(--p-bg);border:1.5px solid var(--ink);overflow-x:auto}
+.planwrap svg{display:block;width:100%;min-width:720px;height:auto;user-select:none}
+.room{cursor:pointer}
+.lotg:hover .hl{stroke:var(--accent);stroke-width:3}
+.hl{fill:none;stroke:transparent;pointer-events:none}
+.lotg.sel .hl{stroke:var(--accent);stroke-width:5}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:var(--step--1);color:var(--muted);align-items:center}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.hint{font-size:var(--step--1);color:var(--muted)}
+.hint kbd{font-family:var(--f-mono);font-size:.75rem;border:1px solid var(--rule);border-bottom-width:2px;padding:0 5px;border-radius:3px;background:var(--sheet)}
+.fiche{position:absolute;z-index:3;width:min(300px,calc(100% - 20px));background:var(--sheet);color:var(--ink);border:1.5px solid var(--ink);box-shadow:6px 6px 0 rgba(0,0,0,.18);padding:14px;display:flex;flex-direction:column;gap:10px}
+.fiche header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.fiche h3{font-size:var(--step-1)}
+.fiche .close{background:none;border:0;font-size:1.3rem;line-height:1;cursor:pointer;color:var(--muted)}
+.fiche dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0;font-size:var(--step--1)}
+.fiche dt{color:var(--muted)}.fiche dd{margin:0;font-family:var(--f-mono)}
+.fiche textarea,.fiche select,.xl select,.xl input{font:inherit;font-size:var(--step--1);color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:2px;padding:6px 8px;width:100%}
+.fiche textarea{min-height:76px;resize:vertical}
+.xlwrap{border:1.5px solid var(--ink);background:var(--sheet);overflow-x:auto}
+.xlbar{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid var(--rule);font-family:var(--f-mono);font-size:.76rem;color:var(--muted)}
+.xlbar .file{color:var(--ink)}
+.sync{display:inline-flex;align-items:center;gap:6px}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--dpe-a);display:inline-block}
+.sync.busy i{background:var(--accent)}
+table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--step--1)}
+.xl th{font-family:var(--f-mono);font-weight:500;font-size:.72rem;letter-spacing:.04em;text-align:left;color:var(--muted);background:var(--paper);padding:6px 8px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);white-space:nowrap}
+.xl th.new{color:var(--accent)}
+.xl td{padding:4px 8px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums;white-space:nowrap}
+.xl td.note{min-width:220px;white-space:normal}
+.xl tr{cursor:pointer}
+.xl tr.sel td{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.xl td.flash{animation:flash 1.1s ease-out}
+@keyframes flash{from{background:color-mix(in srgb,var(--accent) 45%,transparent)}to{background:transparent}}
+.badge{font-family:var(--f-mono);font-size:.7rem;padding:1px 6px;border:1px solid var(--rule);border-radius:2px;color:var(--muted)}
+.demo-note{font-size:.76rem;color:var(--muted);font-style:italic}
+
+/* ——— synchro ——— */
+.flow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:stretch}
+@media (max-width:900px){.flow{grid-template-columns:1fr}.flow .arrow{transform:rotate(90deg);justify-self:center}}
+.node{background:var(--sheet);border:1.5px solid var(--ink);padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.node .label{color:var(--accent)}
+.node ul{margin:0;padding-left:1.1em;font-size:var(--step--1);color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.arrow{align-self:center;font-family:var(--f-mono);font-size:1.6rem;color:var(--muted);text-align:center;line-height:1}
+.arrow small{display:block;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(20px,3vw,44px)}
+@media (max-width:860px){.cols2{grid-template-columns:1fr}}
+.list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.list li{padding:10px 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;font-size:var(--step--1)}
+.list li b{font-weight:600;color:var(--ink)}
+.list .tag{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border:1px solid currentColor;height:fit-content;white-space:nowrap}
+.tag.ok{color:var(--dpe-a)} .tag.warn{color:var(--accent)} .tag.plus{color:var(--cobalt)}
+.list li span{color:var(--muted)}
+
+/* ——— pipeline ——— */
+.pipeline{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;border:1.5px solid var(--ink);background:var(--sheet)}
+.pipeline div{padding:14px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:6px;min-width:0}
+.pipeline div:last-child{border-right:0}
+.pipeline .k{font-family:var(--f-mono);font-size:.72rem;color:var(--accent);letter-spacing:.06em}
+.pipeline p{font-size:var(--step--1);color:var(--muted)}
+@media (max-width:900px){.pipeline{grid-template-columns:1fr}.pipeline div{border-right:0;border-bottom:1px solid var(--rule)}}
+
+/* ——— idées ——— */
+.ideas{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:clamp(14px,2vw,24px)}
+.idea{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:2px solid var(--ink)}
+.idea p{font-size:var(--step--1);color:var(--muted)}
+.dpebar{display:flex;gap:2px;margin-top:4px}
+.dpebar i{flex:1;height:18px;font:500 .7rem/18px var(--f-mono);font-style:normal;text-align:center;color:#111}
+.anom td,.anom th{padding:8px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top;font-size:var(--step--1)}
+.anom th{font-family:var(--f-mono);font-weight:500;font-size:.72rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.anom{border-collapse:collapse;width:100%;min-width:620px}
+.scroll{overflow-x:auto}
+.anom code{font-family:var(--f-mono);font-size:.82rem;background:var(--sheet);padding:1px 5px;border:1px solid var(--rule)}
+
+/* ——— questions & phases ——— */
+.qs{counter-reset:q;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:0 clamp(20px,3vw,44px);margin:0;padding:0;list-style:none}
+.qs li{counter-increment:q;display:grid;grid-template-columns:2.4em minmax(0,1fr);gap:10px;padding:12px 0;border-bottom:1px solid var(--rule)}
+.qs li::before{content:"Q" counter(q);font-family:var(--f-mono);color:var(--accent);font-size:var(--step--1);padding-top:2px}
+.qs b{display:block;font-weight:600}
+.qs span{color:var(--muted);font-size:var(--step--1)}
+.phases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,2vw,24px)}
+@media (max-width:860px){.phases{grid-template-columns:1fr}}
+.phase{background:var(--sheet);border:1.5px solid var(--ink);padding:18px;display:flex;flex-direction:column;gap:10px}
+.phase.now{border-color:var(--accent);box-shadow:6px 6px 0 var(--accent)}
+.phase ul{margin:0;padding-left:1.1em;font-size:var(--step--1);color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.phase .label{color:var(--ink)}
+.closing{font-family:var(--f-display);font-weight:800;font-stretch:110%;font-size:var(--step-2);max-width:26ch;line-height:1.08}
+
+/* nav */
+.dots{position:fixed;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:5}
+.dots a{font-family:var(--f-mono);font-size:.66rem;color:var(--muted);text-decoration:none;padding:3px 5px;border:1px solid transparent;background:var(--paper)}
+.dots a.on{color:var(--accent);border-color:var(--accent)}
+@media (max-width:1100px){.dots{display:none}}
+</style>
+
+<nav class="dots" aria-label="Planches"></nav>
+
+<!-- ================= 01 COUVERTURE ================= -->
+<section class="planche cover" id="p01" data-t="Couverture">
+  <div class="cartouche"><span class="num">PL. 01</span><span class="ttl">Proposition · outil de suivi des locaux</span><span class="sp"></span><span class="ttl">Impasse Léger · rue de Tocqueville · Paris 17ᵉ</span></div>
+  <div class="cover-grid">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <h1>Plan Vivant<span>Les plans du géomètre deviennent un tableau de bord des 116 locaux</span></h1>
+      <p class="lead">Chaque lot coloré selon son état, une fiche au double-clic, et le fichier Excel qui reste la référence : ce qu’on modifie d’un côté apparaît de l’autre.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <svg class="strip" id="coverStrip" viewBox="0 0 520 210" role="img" aria-label="Schéma d’un étage dont les lots changent de statut"></svg>
+      <div class="title-block">
+        <div><small>Dossier</small><b>30 LOCAUX</b></div>
+        <div><small>Plans</small><b>6 niveaux</b></div>
+        <div><small>Date</small><b>07-10-2026</b></div>
+        <div><small>Indice</small><b>a</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 LA DEMANDE ================= -->
+<section class="planche" id="p02" data-t="La demande">
+  <div class="cartouche"><span class="num">PL. 02</span><span class="ttl">La demande, reformulée</span></div>
+  <h2>Trois besoins, une seule source de vérité</h2>
+  <div class="three">
+    <div class="need"><div class="pastille">1</div><h3>Voir l’état de chaque lot sur le plan</h3><p>Un statut par lot, rendu en couleur sur les 6 plans d’étage : <b>vide</b> en voile blanc, <b>en travaux</b> en rayures chantier, <b>nouvelle version</b> dans une couleur franche, avec à terme la projection du futur plan.</p><q>coloriser par lot les plans en pièce jointe</q></div>
+    <div class="need"><div class="pastille">2</div><h3>Annoter les lots</h3><p>Des notes libres attachées au lot, qui s’ouvrent au double-clic sur le plan. Pas de fichier annexe à tenir à jour.</p><q>des notes qui s’afficheront lorsque l’on clique dessus</q></div>
+    <div class="need"><div class="pastille">3</div><h3>Synchroniser avec l’Excel, dans les deux sens</h3><p>Le listing reste le document maître. Un statut ou une note saisi dans Excel apparaît sur le plan, et inversement.</p><q>modifier dans le fichier… et vice versa</q></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span class="label">Ce qu’on a reçu</span>
+    <div class="received">
+      <div class="doc"><span class="ext">PDF</span><div><b>Livret du géomètre</b><p>25 pages, avril 2024. Les 6 dernières sont les plans : sous-sol, RDC, 1ᵉʳ à 4ᵉ étage, lots déjà colorés et numérotés.</p></div></div>
+      <div class="doc"><span class="ext">XLSX</span><div><b>30_LOCAUX</b><p>116 lignes, 17 colonnes : identifiant, n° de lot, type, surface, DPE, étage, orientation, « Local vide. »…</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 03 CONSTATS ================= -->
+<section class="planche" id="p03" data-t="Constats">
+  <div class="cartouche"><span class="num">PL. 03</span><span class="ttl">Ce que les documents révèlent</span></div>
+  <h2>Cinq constats qui orientent la solution</h2>
+  <div class="findings">
+    <div>
+      <div class="finding"><span class="big">300</span><h3>Les plans sont des images, pas des dessins</h3><p>Scans à 300 dpi, sans calques ni tracés vectoriels. Il faut donc « détourer » chaque lot. On s’appuie sur les aplats de couleur déjà posés par le géomètre.</p></div>
+      <div class="finding"><span class="big">116</span><h3>Une ligne Excel = un local, pas un lot</h3><p>103 lots pour 116 locaux. Huit lots s’étendent sur plusieurs niveaux (le 101 occupe le RDC, la cave et le 1ᵉʳ). Le lien se fait donc par l’identifiant du local, unique.</p></div>
+      <div class="finding"><span class="big">16</span><h3>Le statut « vide » existe déjà</h3><p>La colonne « Local vide. » compte 16 locaux cochés. L’outil s’en sert directement : cocher la case = voile blanc sur le plan, et réciproquement.</p></div>
+      <div class="finding"><span class="big">75</span><h3>Des DPE manquants</h3><p>75 locaux sur 116 n’ont aucune étiquette DPE renseignée. Le plan peut aussi servir à rendre ce trou visible.</p></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <figure>
+        <img src="__CROP__" alt="Extrait du plan du rez-de-chaussée : lots 1201, 1202, 1002 et 1001 colorés en bleu, violet, rose et vert, cages d’escalier en jaune" loading="lazy">
+        <figcaption>Extrait du RDC tel que fourni. Chaque lot a déjà sa couleur et sa pastille numérotée : c’est notre point d’accroche.</figcaption>
+      </figure>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span class="label">L’identifiant se décode tout seul</span>
+        <div class="decode" aria-label="Décomposition de l’identifiant IL 10A/00/D0">
+          <span><b>IL</b><small>Impasse Léger (TO = Tocqueville)</small></span>
+          <span><b>10</b><small>n° de bâtiment</small></span>
+          <span><b>A</b><small>escalier</small></span>
+          <span><b>/00</b><small>étage (C0 = cave)</small></span>
+          <span><b>/D0</b><small>position sur le palier</small></span>
+        </div>
+        <p class="hint">Le niveau inscrit dans l’identifiant indique sur quel plan chercher le local. Le rattachement plan ↔ ligne Excel est donc presque automatique.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 04 DÉMO ================= -->
+<section class="planche" id="p04" data-t="Démo">
+  <div class="cartouche"><span class="num">PL. 04</span><span class="ttl">Maquette interactive</span><span class="sp"></span><span class="ttl">Schéma simplifié du RDC · données réelles de l’Excel</span></div>
+  <h2>Essayez&nbsp;: cliquez, double-cliquez, modifiez le tableau</h2>
+  <div class="demo">
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Statut du lot sélectionné" id="statusSeg">
+        <button type="button" data-s="occupe"><i class="sw occ"></i>Occupé</button>
+        <button type="button" data-s="vide"><i class="sw vide"></i>Vide</button>
+        <button type="button" data-s="travaux"><i class="sw trav"></i>En travaux</button>
+        <button type="button" data-s="nouvelle"><i class="sw nouv"></i>Nouvelle version</button>
+      </div>
+      <div class="seg" role="group" aria-label="Mode de coloration" id="modeSeg">
+        <button type="button" data-m="statut" aria-pressed="true">Statuts</button>
+        <button type="button" data-m="dpe">DPE</button>
+        <button type="button" data-m="geo">Couleurs géomètre</button>
+      </div>
+      <label class="check"><input type="checkbox" id="proj" checked> Projeter les futurs plans</label>
+    </div>
+    <div style="position:relative">
+      <div class="planwrap" id="planwrap">
+        <svg id="plan" viewBox="0 0 1010 370" aria-label="Plan schématique interactif"></svg>
+      </div>
+      <div class="fiche" id="fiche" hidden></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <p class="hint">Clic sur un lot : sélection (et ligne surlignée dans le tableau). <kbd>Double-clic</kbd> : fiche du local avec ses notes. Clic sur une ligne du tableau : le lot s’allume sur le plan.</p>
+    <div class="xlwrap">
+      <div class="xlbar"><span class="file">30_LOCAUX.xlsx · feuille « 30 LOCAUX »</span><span class="sync" id="sync"><i></i><span>Synchronisé</span></span></div>
+      <table class="xl" id="xl">
+        <thead><tr><th>IDLOCAL</th><th>N° DE LOT</th><th>TYPE</th><th>Surface</th><th>Local vide.</th><th>DPE</th><th class="new">STATUT PLAN ✚</th><th class="new">NOTES PLAN ✚</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="demo-note">Maquette : identifiants, types, surfaces, DPE et cases « Local vide. » viennent du fichier fourni. Les statuts « en travaux » / « nouvelle version » et les notes sont des exemples. Rien n’est enregistré.</p>
+  </div>
+</section>
+
+<!-- ================= 05 SYNCHRO ================= -->
+<section class="planche" id="p05" data-t="Synchro Excel">
+  <div class="cartouche"><span class="num">PL. 05</span><span class="ttl">Le circuit Excel ⇄ plan</span></div>
+  <h2>L’Excel reste maître, le plan le donne à voir</h2>
+  <div class="flow">
+    <div class="node"><span class="label">Excel · 30_LOCAUX.xlsx</span><h3>On ajoute 2 colonnes</h3><ul><li><b>STATUT PLAN</b> avec liste déroulante (Occupé, Vide, En travaux, Nouvelle version)</li><li><b>NOTES PLAN</b>, texte libre</li><li>Mise en forme conservée, cellules colorées selon le statut</li></ul></div>
+    <div class="arrow" aria-hidden="true">⇄<small>lecture / écriture</small></div>
+    <div class="node"><span class="label">Plan Vivant</span><h3>Une page web, sans installation</h3><ul><li>Ouvre le fichier Excel du poste (Chrome ou Edge)</li><li>Surveille le fichier : un enregistrement dans Excel recolore le plan en ~2 s</li><li>Une saisie sur le plan est réécrite dans le même fichier</li></ul></div>
+    <div class="arrow" aria-hidden="true">⇄<small>zones des lots</small></div>
+    <div class="node"><span class="label">Plans du géomètre</span><h3>6 niveaux détourés</h3><ul><li>Chaque pièce colorée devient une zone cliquable</li><li>Les zones sont regroupées par lot et liées à l’IDLOCAL</li><li>Correction possible en un clic si une pièce est mal rattachée</li></ul></div>
+  </div>
+  <div class="cols2">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">Ce qui marche tel quel</span>
+      <ul class="list">
+        <li><span class="tag ok">OK</span><span><b>Plan → Excel.</b> Statut et note écrits dans les bonnes cellules, le reste du fichier intact.</span></li>
+        <li><span class="tag ok">OK</span><span><b>Excel → plan.</b> On enregistre dans Excel, le plan se met à jour sans recharger.</span></li>
+        <li><span class="tag ok">OK</span><span><b>Lien Excel → plan.</b> Une colonne « Voir sur le plan » ouvre directement le lot concerné.</span></li>
+      </ul>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">À savoir</span>
+      <ul class="list">
+        <li><span class="tag warn">Limite</span><span><b>Excel verrouille le fichier ouvert</b> sous Windows. Les saisies faites sur le plan sont mises en attente et écrites dès qu’Excel le libère.</span></li>
+        <li><span class="tag warn">Limite</span><span><b>Firefox et Safari</b> n’autorisent pas l’écriture directe : export d’un nouveau fichier à la place.</span></li>
+        <li><span class="tag plus">Option</span><span><b>Fichier sur OneDrive / SharePoint</b> : synchro réellement simultanée, à plusieurs, via Microsoft 365.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 06 FAISABILITÉ ================= -->
+<section class="planche" id="p06" data-t="Faisabilité">
+  <div class="cartouche"><span class="num">PL. 06</span><span class="ttl">Preuve de faisabilité · déjà testé sur les plans fournis</span></div>
+  <h2>Les lots se détourent presque seuls</h2>
+  <div class="pipeline">
+    <div><span class="k">ÉTAPE 1</span><h3>Pastilles</h3><p>Repérage des cercles numérotés sur les 6 plans : 114 trouvés automatiquement sur 116, les 2 restants (lot 700, sur fond blanc) ajoutés à la main.</p></div>
+    <div><span class="k">ÉTAPE 2</span><h3>Lecture</h3><p>Numéros lus et vérifiés un par un : 116 pastilles, aucune erreur résiduelle.</p></div>
+    <div><span class="k">ÉTAPE 3</span><h3>Pièces</h3><p>Découpage des aplats bleu, violet, vert, rose et jaune, séparés par les murs gris.</p></div>
+    <div><span class="k">ÉTAPE 4</span><h3>Lots</h3><p>Les pièces de même couleur voisines d’une pastille sont regroupées en un lot.</p></div>
+    <div><span class="k">ÉTAPE 5</span><h3>Contrôle</h3><p>Relecture visuelle étage par étage, retouches en un clic dans l’outil.</p></div>
+  </div>
+  <figure>
+    <img src="__SHEET__" alt="Planche contact des 29 pastilles détectées automatiquement sur le plan du 2ᵉ étage, chacune avec son numéro de lot sur sa couleur" loading="lazy" style="max-width:640px">
+    <figcaption>Les 29 pastilles détectées sur le plan du 2ᵉ étage, chacune sur la couleur de son lot.</figcaption>
+  </figure>
+</section>
+
+<!-- ================= 07 IDÉES ================= -->
+<section class="planche" id="p07" data-t="Idées">
+  <div class="cartouche"><span class="num">PL. 07</span><span class="ttl">Au-delà de la demande</span></div>
+  <h2>Ce que le plan peut montrer de plus</h2>
+  <div class="ideas">
+    <div class="idea"><h3>Carte des DPE</h3><p>Colorer chaque lot par étiquette énergie. Depuis 2025 les logements classés G ne peuvent plus être proposés à la location (nouveaux baux et renouvellements), les F suivront en 2028 : la carte montre où agir en premier.</p><div class="dpebar" aria-hidden="true"><i style="background:var(--dpe-a)">A</i><i style="background:var(--dpe-b)">B</i><i style="background:var(--dpe-c)">C</i><i style="background:var(--dpe-d)">D</i><i style="background:var(--dpe-e)">E</i><i style="background:var(--dpe-f)">F</i><i style="background:var(--dpe-g)">G</i></div></div>
+    <div class="idea"><h3>Calque « futur plan »</h3><p>Importer le plan de l’architecte (image ou PDF), le caler sur l’existant par deux points, régler la transparence : on voit l’avant et l’après au même endroit.</p></div>
+    <div class="idea"><h3>Vue lot multi-niveaux</h3><p>Le 101 ou le 201 s’étendent sur trois niveaux : sélectionner le lot allume toutes ses parties, étage par étage.</p></div>
+    <div class="idea"><h3>Journal des notes</h3><p>Notes datées et signées plutôt qu’un champ unique : on garde l’historique des visites et des travaux, toujours visible dans Excel.</p></div>
+    <div class="idea"><h3>Recherche et filtres</h3><p>Taper « 623 » ou « Studio vide » : les lots concernés s’allument, les autres s’estompent.</p></div>
+    <div class="idea"><h3>Export d’un étage</h3><p>Une image propre de l’étage colorisé, légende comprise, à glisser dans un compte rendu ou un mail.</p></div>
+  </div>
+</section>
+
+<!-- ================= 08 INCOHÉRENCES ================= -->
+<section class="planche" id="p08" data-t="Incohérences">
+  <div class="cartouche"><span class="num">PL. 08</span><span class="ttl">Bonus · contrôle du fichier</span></div>
+  <h2>Croiser plan et Excel fait ressortir les écarts</h2>
+  <p class="lead">En rapprochant les deux documents, quelques lignes ne collent pas. À signaler à la cliente : c’est un bénéfice immédiat de l’outil.</p>
+  <div class="scroll">
+    <table class="anom">
+      <thead><tr><th>Ligne Excel</th><th>Écart constaté</th><th>À vérifier</th></tr></thead>
+      <tbody>
+        <tr><td><code>IL 03A/20/G0</code>, <code>/FG</code>, <code>/D0</code></td><td>Identifiant au 2ᵉ étage, colonne « Étage » à 3</td><td>Quel est le bon niveau ?</td></tr>
+        <tr><td><code>IL 06A/C0/D0</code> (lot 623)</td><td>Cave d’après l’identifiant, « Quatrième étage » en clair, surface 0</td><td>Surface de la cave (visible au sous-sol)</td></tr>
+        <tr><td><code>IL 04A/00/D0</code> (lot 401)</td><td>« à Droite » mais orientation codée G0</td><td>Orientation réelle</td></tr>
+        <tr><td><code>IL 12A/20/F0</code> (lot 1221)</td><td>« N’existe plus », fusionné avec le 1222</td><td>Ligne à archiver plutôt qu’à colorer</td></tr>
+        <tr><td>Lot 271</td><td>Au plan du 1ᵉʳ avec la mention « Emprise à régulariser », absent de l’Excel à ce niveau</td><td>Créer la ligne ou laisser hors suivi</td></tr>
+        <tr><td>Lot 700, sous-sol</td><td>Présent sur le plan du sous-sol, pas de ligne cave dans l’Excel</td><td>Idem</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= 09 QUESTIONS ================= -->
+<section class="planche" id="p09" data-t="Questions">
+  <div class="cartouche"><span class="num">PL. 09</span><span class="ttl">À valider avec la cliente</span></div>
+  <h2>Sept questions avant de lancer</h2>
+  <ol class="qs">
+    <li><div><b>Où vit le fichier Excel ?</b><span>Sur son poste, un serveur partagé, OneDrive ou SharePoint. Cela décide du mode de synchro.</span></div></li>
+    <li><div><b>Qui s’en sert, et sur quoi ?</b><span>Elle seule au bureau, ou aussi une équipe, sur tablette pendant les visites de chantier.</span></div></li>
+    <li><div><b>Statut par local ou par lot ?</b><span>Le 101 peut-il être « en travaux » au RDC et occupé au 1ᵉʳ ?</span></div></li>
+    <li><div><b>D’autres statuts ?</b><span>Loué, préavis, en vente, à relouer… et faut-il conserver la date de changement ?</span></div></li>
+    <li><div><b>Sous quelle forme arrivent les futurs plans ?</b><span>PDF d’architecte, DWG, croquis : cela conditionne la projection.</span></div></li>
+    <li><div><b>Une note unique ou un historique ?</b><span>Un champ que l’on réécrit, ou un journal daté de visites et d’interventions.</span></div></li>
+    <li><div><b>Ce seul immeuble, ou d’autres ensuite ?</b><span>Si d’autres suivent, on industrialise le détourage des plans dès la première version.</span></div></li>
+  </ol>
+</section>
+
+<!-- ================= 10 FEUILLE DE ROUTE ================= -->
+<section class="planche" id="p10" data-t="Feuille de route">
+  <div class="cartouche"><span class="num">PL. 10</span><span class="ttl">Feuille de route</span></div>
+  <h2>Livrer vite, puis enrichir</h2>
+  <div class="phases">
+    <div class="phase now"><span class="label">Version 1 · le besoin exprimé</span><ul><li>6 plans détourés, lots liés aux 116 lignes</li><li>Statuts Occupé / Vide / En travaux / Nouvelle version</li><li>Notes au double-clic, synchro Excel dans les deux sens</li><li>Recherche d’un lot, export image d’un étage</li></ul></div>
+    <div class="phase"><span class="label">Version 2 · projection</span><ul><li>Calque des futurs plans, calé et transparent</li><li>Carte des DPE et échéances de location</li><li>Journal de notes daté, photos de chantier</li></ul></div>
+    <div class="phase"><span class="label">Version 3 · partage</span><ul><li>Fichier sur Microsoft 365, accès à plusieurs</li><li>Consultation sur tablette pendant les visites</li><li>Autres immeubles du patrimoine</li></ul></div>
+  </div>
+  <p class="closing">Le plan du géomètre décrit l’immeuble. Plan Vivant montre où il en est.</p>
+</section>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+  /* --- nav dots --- */
+  const planches = [...document.querySelectorAll('.planche')];
+  const dots = $('.dots');
+  planches.forEach((p, i) => { const a = document.createElement('a'); a.href = '#' + p.id; a.textContent = String(i + 1).padStart(2, '0'); a.title = p.dataset.t; dots.appendChild(a); });
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { const i = planches.indexOf(e.target); dots.querySelectorAll('a').forEach((a, j) => a.classList.toggle('on', i === j)); } }), { threshold: .45 });
+  planches.forEach(p => io.observe(p));
+  document.addEventListener('keydown', e => {
+    if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    const cur = planches.findIndex(p => p.getBoundingClientRect().top > -window.innerHeight / 2);
+    if (['ArrowDown', 'PageDown'].includes(e.key)) { e.preventDefault(); planches[Math.min(planches.length - 1, cur + 1)].scrollIntoView(); }
+    if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); planches[Math.max(0, cur - 1)].scrollIntoView(); }
+  });
+
+  /* --- pattern defs shared --- */
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  function defs(svg, id) {
+    const d = el('defs', {}, svg);
+    const p = el('pattern', { id: 'chantier' + id, width: 14, height: 14, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, d);
+    el('rect', { width: 14, height: 14, fill: 'var(--p-yellow)' }, p);
+    el('rect', { width: 6, height: 14, fill: 'var(--p-ink)' }, p);
+    const n = el('pattern', { id: 'none' + id, width: 8, height: 8, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, d);
+    el('rect', { width: 8, height: 8, fill: 'var(--dpe-none)' }, n);
+    el('rect', { width: 1.5, height: 8, fill: 'var(--p-wall)' }, n);
+  }
+
+  /* --- cover strip: animated status cycling --- */
+  (function cover() {
+    const svg = $('#coverStrip'); defs(svg, 'c');
+    el('rect', { x: 6, y: 6, width: 508, height: 198, fill: 'var(--p-wall)' }, svg);
+    const cols = ['p-blue', 'p-pink', 'p-yellow', 'p-green', 'p-purple', 'p-blue', 'p-yellow', 'p-pink'];
+    const ws = [64, 60, 28, 62, 66, 58, 28, 62]; let x = 14; const cells = [];
+    cols.forEach((c, i) => {
+      const w = ws[i];
+      if (c === 'p-yellow') { el('rect', { x, y: 14, width: w, height: 182, fill: `var(--${c})` }, svg); }
+      else {
+        const g = el('g', {}, svg);
+        [[14, 96], [116, 80]].forEach(([y, h]) => { el('rect', { x, y, width: w, height: h, fill: `var(--${c})` }, g); });
+        const ov = [[14, 96], [116, 80]].map(([y, h]) => el('rect', { x, y, width: w, height: h, fill: 'transparent', style: 'transition:fill .6s' }, g));
+        el('circle', { cx: x + w / 2, cy: 58, r: 13, fill: '#fff', stroke: 'var(--p-ink)', 'stroke-width': 1.2 }, g);
+        const t = el('text', { x: x + w / 2, y: 62, 'text-anchor': 'middle', 'font-family': 'var(--f-mono)', 'font-size': 10, fill: 'var(--p-ink)' }, g);
+        t.textContent = [1201, 1202, 0, 1002, 1001, 800, 0, 801][i];
+        cells.push(ov);
+      }
+      x += w + 8;
+    });
+    const fills = ['transparent', 'rgba(255,255,255,.86)', 'url(#chantierc)', 'var(--cobalt)'];
+    let k = 0;
+    const tick = () => { cells.forEach((ov, i) => { const s = (i * 3 + k) % 5; const f = s < 2 ? fills[0] : fills[s - 1]; ov.forEach(r => { r.setAttribute('fill', f); r.setAttribute('opacity', s === 4 ? .82 : 1); }); }); k++; };
+    tick();
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) setInterval(tick, 1800);
+  })();
+
+  /* --- demo data (valeurs réelles de l'Excel, statuts d'exemple) --- */
+  const ROWS = [
+    { id: 'IL 12A/00/G0', lot: '1201', type: 'T2', surf: 29.5, vide: false, dpe: 'G', color: 'p-blue', w: 112, rooms: ['Séjour', 'Chambre'], statut: 'nouvelle', note: 'Exemple : réunion avec le 1202 à l’étude, plans architecte attendus.' },
+    { id: 'IL 12A/00/D0', lot: '1202', type: 'T2', surf: 31.2, vide: false, dpe: 'E', color: 'p-purple', w: 112, rooms: ['Séjour', 'Chambre'], statut: 'occupe', note: '' },
+    { hall: true, w: 42 },
+    { id: 'IL 10A/00/G0', lot: '1002', type: 'T2', surf: 24.2, vide: false, dpe: '', color: 'p-pink', w: 104, rooms: ['Séjour', 'Chambre'], statut: 'travaux', note: 'Exemple : réfection salle d’eau, fin prévue fin novembre.' },
+    { hall: true, w: 42 },
+    { id: 'IL 10A/00/D0', lot: '1001', type: 'T2', surf: 23.1, vide: false, dpe: '', color: 'p-green', w: 104, rooms: ['Pièce', 'Cuisine'], statut: 'occupe', note: '' },
+    { id: 'IL 08A/00/G0', lot: '800', type: '', surf: 29.2, vide: false, dpe: '', color: 'p-blue', w: 96, rooms: ['Local commercial'], statut: 'occupe', note: '' },
+    { hall: true, w: 42 },
+    { id: 'IL 08A/00/D0', lot: '801', type: 'PRO', surf: 75.7, vide: true, dpe: '', color: 'p-purple', w: 130, rooms: ['Atelier'], statut: 'vide', note: 'Atelier' },
+    { id: 'IL 06A/00/G0', lot: '600', type: 'PRO', surf: 49.8, vide: true, dpe: '', color: 'p-pink', w: 112, rooms: ['Atelier 1', 'Atelier 2'], statut: 'vide', note: 'Ateliers' },
+  ];
+  const LOTS = ROWS.filter(r => !r.hall);
+  const STAT = { occupe: 'Occupé', vide: 'Vide', travaux: 'En travaux', nouvelle: 'Nouvelle version' };
+  const DPEC = { A: 'dpe-a', B: 'dpe-b', C: 'dpe-c', D: 'dpe-d', E: 'dpe-e', F: 'dpe-f', G: 'dpe-g' };
+  let mode = 'statut', selected = null;
+
+  const svg = $('#plan'); defs(svg, 'd');
+  el('rect', { x: 0, y: 0, width: 1010, height: 370, fill: 'var(--p-bg)' }, svg);
+  el('rect', { x: 8, y: 14, width: 994, height: 316, fill: 'var(--p-wall)' }, svg);
+  const cour = el('text', { x: 505, y: 356, 'text-anchor': 'middle', 'font-family': 'var(--f-body)', 'font-size': 13, 'letter-spacing': '6', fill: 'var(--p-ink)' }, svg); cour.textContent = 'IMPASSE  LÉGER';
+  let x = 16; const T = 22, B = 322, MID = 186;
+  ROWS.forEach(r => {
+    if (r.hall) {
+      el('rect', { x, y: T, width: r.w, height: B - T, fill: 'var(--p-yellow)' }, svg);
+      const t = el('text', { x: x + r.w / 2, y: 200, 'text-anchor': 'middle', 'font-size': 12, fill: 'var(--p-ink)', 'font-style': 'italic', transform: `rotate(-90 ${x + r.w / 2} 200)` }, svg); t.textContent = 'Hall';
+      x += r.w + 8; return;
+    }
+    const g = el('g', { class: 'lotg', tabindex: 0, role: 'button', 'aria-label': `Lot ${r.lot}` }, svg);
+    const rects = r.rooms.length === 2 ? [[T, MID - T - 4], [MID + 4, B - MID - 4]] : [[T, B - T]];
+    r.base = []; r.ov = [];
+    rects.forEach(([y, h], i) => {
+      r.base.push(el('rect', { class: 'room', x, y, width: r.w, height: h, fill: `var(--${r.color})` }, g));
+      const tt = el('text', { x: x + r.w / 2, y: y + h - 16, 'text-anchor': 'middle', 'font-size': 12, 'font-style': 'italic', fill: 'var(--p-ink)', 'pointer-events': 'none' }, g); tt.textContent = r.rooms[i];
+    });
+    rects.forEach(([y, h]) => r.ov.push(el('rect', { class: 'room', x, y, width: r.w, height: h, fill: 'transparent' }, g)));
+    // futur plan : nouvelles cloisons
+    r.fut = el('g', { 'pointer-events': 'none', stroke: '#fff', 'stroke-width': 3, 'stroke-dasharray': '8 6', fill: 'none' }, g);
+    el('path', { d: `M${x + r.w * .55} ${T} V${MID + 60} H${x + r.w}`, }, r.fut);
+    el('path', { d: `M${x} ${MID + 4} H${x + r.w * .35}` }, r.fut);
+    const ft = el('text', { x: x + r.w * .27, y: MID + 34, 'text-anchor': 'middle', 'font-size': 10, fill: '#fff', stroke: 'none', 'font-family': 'var(--f-mono)' }, r.fut); ft.textContent = 'FUTUR';
+    el('circle', { cx: x + r.w / 2, cy: 92, r: 21, fill: '#fff', stroke: 'var(--p-ink)', 'stroke-width': 1.4, 'pointer-events': 'none' }, g);
+    const lt = el('text', { x: x + r.w / 2, y: 97, 'text-anchor': 'middle', 'font-size': 14, 'font-family': 'var(--f-mono)', fill: 'var(--p-ink)', 'pointer-events': 'none' }, g); lt.textContent = r.lot;
+    r.tag = el('text', { x: x + r.w / 2, y: 140, 'text-anchor': 'middle', 'font-size': 10.5, 'font-weight': 700, 'letter-spacing': '1', 'font-family': 'var(--f-mono)', fill: 'var(--p-ink)', 'pointer-events': 'none' }, g);
+    r.hl = el('rect', { class: 'hl', x: x + 2, y: T + 2, width: r.w - 4, height: B - T - 4 }, g);
+    r.g = g; r.x = x;
+    g.addEventListener('click', () => select(r));
+    g.addEventListener('dblclick', e => { e.preventDefault(); select(r); openFiche(r); });
+    g.addEventListener('keydown', e => { if (e.key === 'Enter') { select(r); openFiche(r); } });
+    x += r.w + 8;
+  });
+
+  function paint() {
+    const proj = $('#proj').checked;
+    LOTS.forEach(r => {
+      let f = 'transparent', op = 1, tag = '';
+      if (mode === 'statut') {
+        if (r.statut === 'vide') { f = 'var(--p-veil)'; op = .82; tag = 'VIDE'; }
+        if (r.statut === 'travaux') { f = 'url(#chantierd)'; op = .8; tag = 'TRAVAUX'; }
+        if (r.statut === 'nouvelle') { f = 'var(--cobalt)'; op = .78; tag = 'NOUV. VERSION'; }
+      } else if (mode === 'dpe') {
+        const k = (r.dpe || '').charAt(0);
+        f = DPEC[k] ? `var(--${DPEC[k]})` : 'url(#noned)'; op = .9; tag = k ? 'DPE ' + k : 'DPE ?';
+      }
+      r.ov.forEach(o => { o.setAttribute('fill', f); o.setAttribute('opacity', op); });
+      r.tag.textContent = tag;
+      r.tag.setAttribute('fill', mode === 'statut' && r.statut === 'nouvelle' ? '#fff' : 'var(--p-ink)');
+      r.fut.style.display = (mode === 'statut' && r.statut === 'nouvelle' && proj) ? '' : 'none';
+      r.g.classList.toggle('sel', r === selected);
+    });
+    document.querySelectorAll('#statusSeg button').forEach(b => { b.disabled = !selected; b.setAttribute('aria-pressed', String(!!selected && selected.statut === b.dataset.s)); });
+    legend();
+  }
+  function legend() {
+    const L = $('#legend');
+    if (mode === 'dpe') L.innerHTML = Object.keys(DPEC).map(k => `<span><i class="sw" style="background:var(--${DPEC[k]})"></i>${k}</span>`).join('') + '<span><i class="sw" style="background:repeating-linear-gradient(45deg,var(--dpe-none) 0 3px,var(--p-wall) 3px 4px)"></i>Non renseigné</span>';
+    else if (mode === 'geo') L.innerHTML = '<span>Couleurs d’origine du géomètre : une couleur par lot, jaune pour les parties communes.</span>';
+    else L.innerHTML = '<span><i class="sw occ"></i>Occupé (couleur du géomètre)</span><span><i class="sw vide"></i>Vide</span><span><i class="sw trav"></i>En travaux</span><span><i class="sw nouv"></i>Nouvelle version</span>';
+  }
+
+  /* --- tableau façon Excel --- */
+  const tb = $('#xl tbody');
+  LOTS.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="mono">${r.id}</td><td class="mono">${r.lot}</td><td>${r.type || '<span class="badge">—</span>'}</td><td class="mono">${r.surf.toFixed(1).replace('.', ',')}</td><td class="vc mono"></td><td class="mono">${r.dpe || '<span class="badge">vide</span>'}</td><td class="st"><select aria-label="Statut du lot ${r.lot}">${Object.entries(STAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></td><td class="note"><input aria-label="Notes du lot ${r.lot}" type="text"></td>`;
+    r.tr = tr; r.sel = $('select', tr); r.inp = $('input', tr); r.vc = $('.vc', tr);
+    tr.addEventListener('click', e => { if (e.target.closest('select,input')) return; select(r, true); });
+    r.sel.addEventListener('change', () => { setStatus(r, r.sel.value, 'xl'); });
+    r.inp.addEventListener('input', () => { r.note = r.inp.value; syncing(); if (fiche.lot === r) $('#fnote').value = r.note; });
+    r.inp.addEventListener('focus', () => select(r));
+    tb.appendChild(tr);
+  });
+  function fillRow(r, flash) {
+    r.sel.value = r.statut; r.inp.value = r.note; r.vc.textContent = r.statut === 'vide' ? 'VRAI' : 'FAUX';
+    if (flash) [r.sel.parentElement, r.vc].forEach(td => { td.classList.remove('flash'); void td.offsetWidth; td.classList.add('flash'); });
+  }
+  LOTS.forEach(r => fillRow(r));
+
+  let syncT;
+  function syncing() {
+    const s = $('#sync'); s.classList.add('busy'); s.lastElementChild.textContent = 'Écriture dans le fichier…';
+    clearTimeout(syncT); syncT = setTimeout(() => { s.classList.remove('busy'); s.lastElementChild.textContent = 'Synchronisé à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }, 700);
+  }
+  function setStatus(r, s, from) {
+    r.statut = s; r.vide = s === 'vide';
+    if (mode !== 'statut') setMode('statut');
+    fillRow(r, from !== 'xl'); paint(); syncing();
+    if (fiche.lot === r) $('#fstat').value = s;
+  }
+  function select(r, scroll) {
+    selected = r;
+    LOTS.forEach(o => o.tr.classList.toggle('sel', o === r));
+    if (scroll) { const wrap = $('#planwrap'); wrap.scrollTo({ left: r.x - 60, behavior: 'smooth' }); }
+    paint();
+  }
+  document.querySelectorAll('#statusSeg button').forEach(b => b.addEventListener('click', () => selected && setStatus(selected, b.dataset.s, 'plan')));
+  function setMode(m) { mode = m; document.querySelectorAll('#modeSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === m))); paint(); }
+  document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+  $('#proj').addEventListener('change', paint);
+
+  /* --- fiche au double-clic --- */
+  const fiche = $('#fiche');
+  function openFiche(r) {
+    fiche.lot = r;
+    fiche.innerHTML = `<header><div><span class="label">Lot ${r.lot}</span><h3>${r.id}</h3></div><button class="close" type="button" aria-label="Fermer la fiche">×</button></header>
+      <dl><dt>Type</dt><dd>${r.type || '—'}</dd><dt>Surface</dt><dd>${r.surf.toFixed(1).replace('.', ',')} m²</dd><dt>DPE</dt><dd>${r.dpe || 'non renseigné'}</dd></dl>
+      <label class="label" for="fstat">Statut</label><select id="fstat">${Object.entries(STAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+      <label class="label" for="fnote">Notes</label><textarea id="fnote" placeholder="Ajouter une note…"></textarea>`;
+    $('#fstat').value = r.statut; $('#fnote').value = r.note;
+    $('#fstat').addEventListener('change', e => setStatus(r, e.target.value, 'plan'));
+    $('#fnote').addEventListener('input', e => { r.note = e.target.value; r.inp.value = r.note; const td = r.inp.parentElement; td.classList.remove('flash'); void td.offsetWidth; td.classList.add('flash'); syncing(); });
+    $('.close', fiche).addEventListener('click', () => { fiche.hidden = true; fiche.lot = null; });
+    const wrap = $('#planwrap'); const scale = svg.clientWidth / 1010;
+    let left = (r.x + r.w + 10) * scale - wrap.scrollLeft;
+    fiche.hidden = false;
+    if (left + fiche.offsetWidth > wrap.clientWidth) left = Math.max(10, r.x * scale - wrap.scrollLeft - fiche.offsetWidth - 10);
+    fiche.style.left = Math.max(10, left) + 'px'; fiche.style.top = '14px';
+    $('#fnote').focus();
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !fiche.hidden) { fiche.hidden = true; fiche.lot = null; } });
+
+  select(LOTS[2]);
+})();
+</script>
