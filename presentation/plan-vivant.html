@@ -192,6 +192,10 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
 .phase .label{color:var(--ink)}
 .closing{font-family:var(--f-display);font-weight:800;font-stretch:110%;font-size:var(--step-2);max-width:26ch;line-height:1.08}
 
+.xl.static tr{cursor:default}
+.node.planb{border-style:dashed;align-self:start}
+.decided{max-width:820px}
+.list code{white-space:normal;overflow-wrap:anywhere;font-size:.78rem}
 /* nav */
 .dots{position:fixed;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:5}
 .dots a{font-family:var(--f-mono);font-size:.66rem;color:var(--muted);text-decoration:none;padding:3px 5px;border:1px solid transparent;background:var(--paper)}
@@ -207,15 +211,15 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
   <div class="cover-grid">
     <div style="display:flex;flex-direction:column;gap:22px">
       <h1>Plan Vivant<span>Les plans du géomètre deviennent un tableau de bord des 116 locaux</span></h1>
-      <p class="lead">Chaque lot coloré selon son état, une fiche au double-clic, et le fichier Excel qui reste la référence : ce qu’on modifie d’un côté apparaît de l’autre.</p>
+      <p class="lead">Chaque lot coloré selon son état, une fiche au double-clic, et le fichier Excel qui reste la référence. Un petit agent installé sur le PC synchronise les deux, en direct, même classeur ouvert.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px">
       <svg class="strip" id="coverStrip" viewBox="0 0 520 210" role="img" aria-label="Schéma d’un étage dont les lots changent de statut"></svg>
       <div class="title-block">
         <div><small>Dossier</small><b>30 LOCAUX</b></div>
         <div><small>Plans</small><b>6 niveaux</b></div>
-        <div><small>Date</small><b>07-10-2026</b></div>
-        <div><small>Indice</small><b>a</b></div>
+        <div><small>Synchro</small><b>Agent local</b></div>
+        <div><small>Indice</small><b>b · 10-2026</b></div>
       </div>
     </div>
   </div>
@@ -228,7 +232,7 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
   <div class="three">
     <div class="need"><div class="pastille">1</div><h3>Voir l’état de chaque lot sur le plan</h3><p>Un statut par lot, rendu en couleur sur les 6 plans d’étage : <b>vide</b> en voile blanc, <b>en travaux</b> en rayures chantier, <b>nouvelle version</b> dans une couleur franche, avec à terme la projection du futur plan.</p><q>coloriser par lot les plans en pièce jointe</q></div>
     <div class="need"><div class="pastille">2</div><h3>Annoter les lots</h3><p>Des notes libres attachées au lot, qui s’ouvrent au double-clic sur le plan. Pas de fichier annexe à tenir à jour.</p><q>des notes qui s’afficheront lorsque l’on clique dessus</q></div>
-    <div class="need"><div class="pastille">3</div><h3>Synchroniser avec l’Excel, dans les deux sens</h3><p>Le listing reste le document maître. Un statut ou une note saisi dans Excel apparaît sur le plan, et inversement.</p><q>modifier dans le fichier… et vice versa</q></div>
+    <div class="need"><div class="pastille">3</div><h3>Synchroniser avec l’Excel, dans les deux sens</h3><p>Le listing reste le document maître, sur le PC de la cliente. Un statut ou une note saisi dans Excel apparaît sur le plan, et inversement, même quand le classeur est ouvert.</p><q>modifier dans le fichier… et vice versa</q></div>
   </div>
   <div style="display:flex;flex-direction:column;gap:10px">
     <span class="label">Ce qu’on a reçu</span>
@@ -246,8 +250,8 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
   <div class="findings">
     <div>
       <div class="finding"><span class="big">300</span><h3>Les plans sont des images, pas des dessins</h3><p>Scans à 300 dpi, sans calques ni tracés vectoriels. Il faut donc « détourer » chaque lot. On s’appuie sur les aplats de couleur déjà posés par le géomètre.</p></div>
-      <div class="finding"><span class="big">116</span><h3>Une ligne Excel = un local, pas un lot</h3><p>103 lots pour 116 locaux. Huit lots s’étendent sur plusieurs niveaux (le 101 occupe le RDC, la cave et le 1ᵉʳ). Le lien se fait donc par l’identifiant du local, unique.</p></div>
-      <div class="finding"><span class="big">16</span><h3>Le statut « vide » existe déjà</h3><p>La colonne « Local vide. » compte 16 locaux cochés. L’outil s’en sert directement : cocher la case = voile blanc sur le plan, et réciproquement.</p></div>
+      <div class="finding"><span class="big">103</span><h3>On suit des lots, pas des lignes</h3><p>116 lignes pour 103 lots : huit lots s’étendent sur plusieurs niveaux (le 101 occupe le RDC, la cave et le 1ᵉʳ). Statut et notes se posent sur le lot, et toutes ses parties changent de couleur ensemble, sur chaque plan.</p></div>
+      <div class="finding"><span class="big">16</span><h3>Le statut « vide » existe déjà</h3><p>La colonne « Local vide. » compte 16 locaux cochés. Passer un lot en « Vide » coche la case sur toutes ses lignes, et un lot dont toutes les lignes sont cochées apparaît vide.</p></div>
       <div class="finding"><span class="big">75</span><h3>Des DPE manquants</h3><p>75 locaux sur 116 n’ont aucune étiquette DPE renseignée. Le plan peut aussi servir à rendre ce trou visible.</p></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:22px">
@@ -264,7 +268,7 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
           <span><b>/00</b><small>étage (C0 = cave)</small></span>
           <span><b>/D0</b><small>position sur le palier</small></span>
         </div>
-        <p class="hint">Le niveau inscrit dans l’identifiant indique sur quel plan chercher le local. Le rattachement plan ↔ ligne Excel est donc presque automatique.</p>
+        <p class="hint">Le niveau inscrit dans l’identifiant indique sur quel plan se trouve chaque partie du lot. Le rattachement plan ↔ Excel est donc presque automatique.</p>
       </div>
     </div>
   </div>
@@ -296,52 +300,84 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
       <div class="fiche" id="fiche" hidden></div>
     </div>
     <div class="legend" id="legend"></div>
-    <p class="hint">Clic sur un lot : sélection (et ligne surlignée dans le tableau). <kbd>Double-clic</kbd> : fiche du local avec ses notes. Clic sur une ligne du tableau : le lot s’allume sur le plan.</p>
+    <p class="hint">Clic sur un lot : sélection, et sa ligne s’allume dans l’onglet Excel. <kbd>Double-clic</kbd> : fiche du lot avec ses notes. Clic sur une ligne de l’onglet : le plan se centre sur le lot. Le 102 a aussi une partie en cave : sur le plan du sous-sol, elle prend la même couleur.</p>
     <div class="xlwrap">
-      <div class="xlbar"><span class="file">30_LOCAUX.xlsx · feuille « 30 LOCAUX »</span><span class="sync" id="sync"><i></i><span>Synchronisé</span></span></div>
+      <div class="xlbar"><span class="file">30_LOCAUX.xlsx · onglet « SUIVI LOTS » · classeur ouvert</span><span class="sync" id="sync"><i></i><span>Agent local · synchronisé</span></span></div>
       <table class="xl" id="xl">
-        <thead><tr><th>IDLOCAL</th><th>N° DE LOT</th><th>TYPE</th><th>Surface</th><th>Local vide.</th><th>DPE</th><th class="new">STATUT PLAN ✚</th><th class="new">NOTES PLAN ✚</th></tr></thead>
+        <thead><tr><th>N° LOT</th><th>LOCAUX DU LOT</th><th>NIVEAUX</th><th>m² total</th><th>Local vide. ⇄</th><th class="new">STATUT</th><th class="new">NOTES</th><th class="new">MIS À JOUR</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
-    <p class="demo-note">Maquette : identifiants, types, surfaces, DPE et cases « Local vide. » viennent du fichier fourni. Les statuts « en travaux » / « nouvelle version » et les notes sont des exemples. Rien n’est enregistré.</p>
+    <p class="demo-note">Maquette : identifiants, niveaux, surfaces, DPE et cases « Local vide. » viennent du fichier fourni. Les statuts « en travaux » / « nouvelle version » et les notes sont des exemples. Rien n’est enregistré. La colonne « Local vide. ⇄ » reflète les cases de la feuille 30 LOCAUX, tenues à jour par l’agent.</p>
   </div>
 </section>
 
-<!-- ================= 05 SYNCHRO ================= -->
-<section class="planche" id="p05" data-t="Synchro Excel">
-  <div class="cartouche"><span class="num">PL. 05</span><span class="ttl">Le circuit Excel ⇄ plan</span></div>
-  <h2>L’Excel reste maître, le plan le donne à voir</h2>
+<!-- ================= 05 AGENT ================= -->
+<section class="planche" id="p05" data-t="Agent local">
+  <div class="cartouche"><span class="num">PL. 05</span><span class="ttl">Architecture · le fichier reste sur le PC</span></div>
+  <h2>Un petit agent sur le PC fait le lien</h2>
   <div class="flow">
-    <div class="node"><span class="label">Excel · 30_LOCAUX.xlsx</span><h3>On ajoute 2 colonnes</h3><ul><li><b>STATUT PLAN</b> avec liste déroulante (Occupé, Vide, En travaux, Nouvelle version)</li><li><b>NOTES PLAN</b>, texte libre</li><li>Mise en forme conservée, cellules colorées selon le statut</li></ul></div>
-    <div class="arrow" aria-hidden="true">⇄<small>lecture / écriture</small></div>
-    <div class="node"><span class="label">Plan Vivant</span><h3>Une page web, sans installation</h3><ul><li>Ouvre le fichier Excel du poste (Chrome ou Edge)</li><li>Surveille le fichier : un enregistrement dans Excel recolore le plan en ~2 s</li><li>Une saisie sur le plan est réécrite dans le même fichier</li></ul></div>
-    <div class="arrow" aria-hidden="true">⇄<small>zones des lots</small></div>
-    <div class="node"><span class="label">Plans du géomètre</span><h3>6 niveaux détourés</h3><ul><li>Chaque pièce colorée devient une zone cliquable</li><li>Les zones sont regroupées par lot et liées à l’IDLOCAL</li><li>Correction possible en un clic si une pièce est mal rattachée</li></ul></div>
+    <div class="node"><span class="label">Excel · 30_LOCAUX.xlsx</span><h3>Ouvert ou fermé, peu importe</h3><ul><li>Un onglet <b>SUIVI LOTS</b> est ajouté, une ligne par lot</li><li>La feuille 30 LOCAUX reste telle quelle</li><li>La cliente continue de travailler dans Excel comme avant</li></ul></div>
+    <div class="arrow" aria-hidden="true">⇄<small>en direct</small></div>
+    <div class="node"><span class="label">Agent Plan Vivant · sur le PC</span><h3>Un programme discret</h3><ul><li>Démarre avec Windows, une icône près de l’horloge</li><li><b>Classeur ouvert</b> : lit et écrit dans Excel lui-même, voit chaque saisie au moment où elle est faite</li><li><b>Classeur fermé</b> : écrit dans le fichier, mise en forme conservée</li><li>Aucune donnée ne quitte le PC</li></ul></div>
+    <div class="arrow" aria-hidden="true">⇄<small>sur le PC</small></div>
+    <div class="node"><span class="label">Plan Vivant · navigateur</span><h3>Les plans, sur un raccourci du bureau</h3><ul><li>6 niveaux détourés, chaque lot relié à sa ligne</li><li>Double-clic sur un lot : sa fiche et ses notes</li><li>Double-clic sur une ligne dans Excel : le plan se centre sur le lot</li></ul></div>
   </div>
   <div class="cols2">
     <div style="display:flex;flex-direction:column;gap:10px">
-      <span class="label">Ce qui marche tel quel</span>
+      <span class="label">Ce que l’agent apporte</span>
       <ul class="list">
-        <li><span class="tag ok">OK</span><span><b>Plan → Excel.</b> Statut et note écrits dans les bonnes cellules, le reste du fichier intact.</span></li>
-        <li><span class="tag ok">OK</span><span><b>Excel → plan.</b> On enregistre dans Excel, le plan se met à jour sans recharger.</span></li>
-        <li><span class="tag ok">OK</span><span><b>Lien Excel → plan.</b> Une colonne « Voir sur le plan » ouvre directement le lot concerné.</span></li>
+        <li><span class="tag ok">Direct</span><span><b>Pas de verrou Excel.</b> Passer par Excel lui-même évite le blocage du fichier ouvert : la synchro se fait sans enregistrer ni fermer.</span></li>
+        <li><span class="tag ok">2 sens</span><span><b>Plan → Excel et Excel → plan.</b> Statut, notes, case « Local vide. », et même la sélection : on navigue de l’un à l’autre.</span></li>
+        <li><span class="tag ok">Local</span><span><b>Rien dans le cloud.</b> Le fichier ne bouge pas, aucun compte à créer, n’importe quel navigateur.</span></li>
       </ul>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <span class="label">À savoir</span>
+      <span class="label">À prévoir</span>
       <ul class="list">
-        <li><span class="tag warn">Limite</span><span><b>Excel verrouille le fichier ouvert</b> sous Windows. Les saisies faites sur le plan sont mises en attente et écrites dès qu’Excel le libère.</span></li>
-        <li><span class="tag warn">Limite</span><span><b>Firefox et Safari</b> n’autorisent pas l’écriture directe : export d’un nouveau fichier à la place.</span></li>
-        <li><span class="tag plus">Option</span><span><b>Fichier sur OneDrive / SharePoint</b> : synchro réellement simultanée, à plusieurs, via Microsoft 365.</span></li>
+        <li><span class="tag warn">Windows</span><span><b>Alerte SmartScreen</b> au premier lancement tant que le programme n’est pas signé. Un certificat de signature de code la supprime (environ 200 à 400 € par an).</span></li>
+        <li><span class="tag warn">Droits</span><span><b>PC géré par un service informatique</b> : il faut son accord. La version portable, sans installation, limite le besoin de droits administrateur.</span></li>
+        <li><span class="tag warn">Excel</span><span><b>Excel de bureau sous Windows</b>. Excel en ligne et Excel pour Mac ne sont pas pilotables de cette façon.</span></li>
       </ul>
     </div>
+  </div>
+</section>
+
+<!-- ================= 06 PAR LOT ================= -->
+<section class="planche" id="p06" data-t="Suivi par lot">
+  <div class="cartouche"><span class="num">PL. 06</span><span class="ttl">Modèle de données · statut par lot</span></div>
+  <h2>Un onglet SUIVI LOTS, une ligne par lot</h2>
+  <p class="lead">La feuille d’origine n’est pas touchée. Le suivi vit dans un onglet à part : 103 lignes, que l’agent lit et écrit.</p>
+  <div class="xlwrap">
+    <div class="xlbar"><span class="file">30_LOCAUX.xlsx · onglet « SUIVI LOTS »</span><span>extrait · 6 lots sur 103</span></div>
+    <table class="xl static">
+      <thead><tr><th>N° LOT</th><th>LOCAUX (feuille 30 LOCAUX)</th><th>NIVEAUX</th><th class="new">STATUT</th><th class="new">NOTES</th><th class="new">MIS À JOUR</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">101</td><td class="mono">TO 57A/00/D0 · TO 57A/C0/D0 · IL 01A/10/F0</td><td>RDC, cave, 1ᵉʳ</td><td>Occupé</td><td class="note">Restaurant, toilettes en cave, appartement au 1ᵉʳ</td><td class="mono">—</td></tr>
+        <tr><td class="mono">102</td><td class="mono">TO 57A/00/G0 · TO 57A/C0/G0</td><td>RDC, cave</td><td>Occupé</td><td class="note">Boulangerie, laboratoire en cave</td><td class="mono">—</td></tr>
+        <tr><td class="mono">201</td><td class="mono">IL 02A/C0/D0 · TO 57B/00/G0 · IL 02A/10/D0</td><td>Cave, RDC, 1ᵉʳ</td><td>Vide</td><td class="note">Les 3 lignes sont cochées « Local vide. »</td><td class="mono">—</td></tr>
+        <tr><td class="mono">623</td><td class="mono">IL 06A/20/D0 · IL 06A/C0/D0</td><td>2ᵉ, cave</td><td>Occupé</td><td class="note"></td><td class="mono">—</td></tr>
+        <tr><td class="mono">1002</td><td class="mono">IL 10A/00/G0</td><td>RDC</td><td>En travaux</td><td class="note">Exemple : réfection salle d’eau</td><td class="mono">07/10/2026</td></tr>
+        <tr><td class="mono">1201</td><td class="mono">IL 12A/00/G0</td><td>RDC</td><td>Nouvelle version</td><td class="note">Exemple : réunion avec le 1202 à l’étude</td><td class="mono">07/10/2026</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="cols2">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">Les règles</span>
+      <ul class="list">
+        <li><span class="tag ok">Lot</span><span><b>Un statut, une note par lot.</b> Le 101 change de couleur au RDC, en cave et au 1ᵉʳ d’un seul geste.</span></li>
+        <li><span class="tag ok">Vide</span><span><b>« Vide » coche « Local vide. »</b> sur toutes les lignes du lot dans 30 LOCAUX, et inversement.</span></li>
+        <li><span class="tag plus">Option</span><span><b>Statut visible dans 30 LOCAUX</b> grâce à deux colonnes calculées : <code class="mono">=RECHERCHEX(B2;'SUIVI LOTS'!A:A;'SUIVI LOTS'!D:D;"")</code></span></li>
+      </ul>
+    </div>
+    <div class="node planb"><span class="label">Plan B · si le PC refuse les exécutables</span><h3>Tout dans Excel</h3><ul><li>Un onglet par plan, chaque lot dessiné en forme cliquable sur l’image</li><li>Macros VBA : clic sur un lot = fiche, double-clic sur une ligne = le lot sur le plan</li><li>Fichier .xlsm avec « Activer les macros », rendu plus sobre, pas de calque futur plan</li></ul></div>
   </div>
 </section>
 
 <!-- ================= 06 FAISABILITÉ ================= -->
-<section class="planche" id="p06" data-t="Faisabilité">
-  <div class="cartouche"><span class="num">PL. 06</span><span class="ttl">Preuve de faisabilité · déjà testé sur les plans fournis</span></div>
+<section class="planche" id="p07" data-t="Faisabilité">
+  <div class="cartouche"><span class="num">PL. 07</span><span class="ttl">Preuve de faisabilité · déjà testé sur les plans fournis</span></div>
   <h2>Les lots se détourent presque seuls</h2>
   <div class="pipeline">
     <div><span class="k">ÉTAPE 1</span><h3>Pastilles</h3><p>Repérage des cercles numérotés sur les 6 plans : 114 trouvés automatiquement sur 116, les 2 restants (lot 700, sur fond blanc) ajoutés à la main.</p></div>
@@ -357,13 +393,13 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
 </section>
 
 <!-- ================= 07 IDÉES ================= -->
-<section class="planche" id="p07" data-t="Idées">
-  <div class="cartouche"><span class="num">PL. 07</span><span class="ttl">Au-delà de la demande</span></div>
+<section class="planche" id="p08" data-t="Idées">
+  <div class="cartouche"><span class="num">PL. 08</span><span class="ttl">Au-delà de la demande</span></div>
   <h2>Ce que le plan peut montrer de plus</h2>
   <div class="ideas">
     <div class="idea"><h3>Carte des DPE</h3><p>Colorer chaque lot par étiquette énergie. Depuis 2025 les logements classés G ne peuvent plus être proposés à la location (nouveaux baux et renouvellements), les F suivront en 2028 : la carte montre où agir en premier.</p><div class="dpebar" aria-hidden="true"><i style="background:var(--dpe-a)">A</i><i style="background:var(--dpe-b)">B</i><i style="background:var(--dpe-c)">C</i><i style="background:var(--dpe-d)">D</i><i style="background:var(--dpe-e)">E</i><i style="background:var(--dpe-f)">F</i><i style="background:var(--dpe-g)">G</i></div></div>
     <div class="idea"><h3>Calque « futur plan »</h3><p>Importer le plan de l’architecte (image ou PDF), le caler sur l’existant par deux points, régler la transparence : on voit l’avant et l’après au même endroit.</p></div>
-    <div class="idea"><h3>Vue lot multi-niveaux</h3><p>Le 101 ou le 201 s’étendent sur trois niveaux : sélectionner le lot allume toutes ses parties, étage par étage.</p></div>
+    <div class="idea"><h3>Vue lot multi-niveaux</h3><p>Le 101 ou le 201 s’étendent sur trois niveaux : sélectionner le lot affiche ses plans côte à côte, parties allumées.</p></div>
     <div class="idea"><h3>Journal des notes</h3><p>Notes datées et signées plutôt qu’un champ unique : on garde l’historique des visites et des travaux, toujours visible dans Excel.</p></div>
     <div class="idea"><h3>Recherche et filtres</h3><p>Taper « 623 » ou « Studio vide » : les lots concernés s’allument, les autres s’estompent.</p></div>
     <div class="idea"><h3>Export d’un étage</h3><p>Une image propre de l’étage colorisé, légende comprise, à glisser dans un compte rendu ou un mail.</p></div>
@@ -371,8 +407,8 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
 </section>
 
 <!-- ================= 08 INCOHÉRENCES ================= -->
-<section class="planche" id="p08" data-t="Incohérences">
-  <div class="cartouche"><span class="num">PL. 08</span><span class="ttl">Bonus · contrôle du fichier</span></div>
+<section class="planche" id="p09" data-t="Incohérences">
+  <div class="cartouche"><span class="num">PL. 09</span><span class="ttl">Bonus · contrôle du fichier</span></div>
   <h2>Croiser plan et Excel fait ressortir les écarts</h2>
   <p class="lead">En rapprochant les deux documents, quelques lignes ne collent pas. À signaler à la cliente : c’est un bénéfice immédiat de l’outil.</p>
   <div class="scroll">
@@ -391,28 +427,32 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
 </section>
 
 <!-- ================= 09 QUESTIONS ================= -->
-<section class="planche" id="p09" data-t="Questions">
-  <div class="cartouche"><span class="num">PL. 09</span><span class="ttl">À valider avec la cliente</span></div>
-  <h2>Sept questions avant de lancer</h2>
+<section class="planche" id="p10" data-t="Questions">
+  <div class="cartouche"><span class="num">PL. 10</span><span class="ttl">À valider avec la cliente</span></div>
+  <h2>Deux points tranchés, sept à valider</h2>
+  <ul class="list decided">
+    <li><span class="tag ok">Tranché</span><span><b>Le fichier est sur un PC</b> : synchro par un agent local, pas de cloud.</span></li>
+    <li><span class="tag ok">Tranché</span><span><b>Le statut se pose par lot</b> : onglet SUIVI LOTS, toutes les parties du lot colorées ensemble.</span></li>
+  </ul>
   <ol class="qs">
-    <li><div><b>Où vit le fichier Excel ?</b><span>Sur son poste, un serveur partagé, OneDrive ou SharePoint. Cela décide du mode de synchro.</span></div></li>
-    <li><div><b>Qui s’en sert, et sur quoi ?</b><span>Elle seule au bureau, ou aussi une équipe, sur tablette pendant les visites de chantier.</span></div></li>
-    <li><div><b>Statut par local ou par lot ?</b><span>Le 101 peut-il être « en travaux » au RDC et occupé au 1ᵉʳ ?</span></div></li>
+    <li><div><b>Le PC est-il géré par un service informatique ?</b><span>Droits d’installation, antivirus d’entreprise : cela décide entre l’agent et le plan B tout Excel.</span></div></li>
+    <li><div><b>Quelle version d’Excel et de Windows ?</b><span>Il faut Excel de bureau sous Windows. RECHERCHEX existe depuis Excel 2021 / 365, sinon INDEX + EQUIV.</span></div></li>
+    <li><div><b>Le plan doit-il se voir ailleurs que sur ce PC ?</b><span>Sur une tablette en visite, ou par un collaborateur : l’agent peut servir le plan sur le réseau du bureau.</span></div></li>
     <li><div><b>D’autres statuts ?</b><span>Loué, préavis, en vente, à relouer… et faut-il conserver la date de changement ?</span></div></li>
     <li><div><b>Sous quelle forme arrivent les futurs plans ?</b><span>PDF d’architecte, DWG, croquis : cela conditionne la projection.</span></div></li>
     <li><div><b>Une note unique ou un historique ?</b><span>Un champ que l’on réécrit, ou un journal daté de visites et d’interventions.</span></div></li>
-    <li><div><b>Ce seul immeuble, ou d’autres ensuite ?</b><span>Si d’autres suivent, on industrialise le détourage des plans dès la première version.</span></div></li>
+    <li><div><b>Ce seul immeuble, ou d’autres ensuite ?</b><span>Si d’autres suivent, l’agent gère plusieurs classeurs et on industrialise le détourage des plans.</span></div></li>
   </ol>
 </section>
 
 <!-- ================= 10 FEUILLE DE ROUTE ================= -->
-<section class="planche" id="p10" data-t="Feuille de route">
-  <div class="cartouche"><span class="num">PL. 10</span><span class="ttl">Feuille de route</span></div>
+<section class="planche" id="p11" data-t="Feuille de route">
+  <div class="cartouche"><span class="num">PL. 11</span><span class="ttl">Feuille de route</span></div>
   <h2>Livrer vite, puis enrichir</h2>
   <div class="phases">
-    <div class="phase now"><span class="label">Version 1 · le besoin exprimé</span><ul><li>6 plans détourés, lots liés aux 116 lignes</li><li>Statuts Occupé / Vide / En travaux / Nouvelle version</li><li>Notes au double-clic, synchro Excel dans les deux sens</li><li>Recherche d’un lot, export image d’un étage</li></ul></div>
+    <div class="phase now"><span class="label">Version 1 · le besoin exprimé</span><ul><li>Agent Windows portable + onglet SUIVI LOTS</li><li>6 plans détourés, 103 lots reliés à leurs 116 lignes</li><li>Statuts Occupé / Vide / En travaux / Nouvelle version, par lot</li><li>Notes au double-clic, synchro directe classeur ouvert ou fermé</li><li>Recherche d’un lot, export image d’un étage</li></ul></div>
     <div class="phase"><span class="label">Version 2 · projection</span><ul><li>Calque des futurs plans, calé et transparent</li><li>Carte des DPE et échéances de location</li><li>Journal de notes daté, photos de chantier</li></ul></div>
-    <div class="phase"><span class="label">Version 3 · partage</span><ul><li>Fichier sur Microsoft 365, accès à plusieurs</li><li>Consultation sur tablette pendant les visites</li><li>Autres immeubles du patrimoine</li></ul></div>
+    <div class="phase"><span class="label">Version 3 · partage</span><ul><li>Plan consultable depuis d’autres postes du bureau</li><li>Consultation sur tablette pendant les visites</li><li>Autres immeubles, plusieurs classeurs suivis</li><li>Programme signé, mises à jour automatiques</li></ul></div>
   </div>
   <p class="closing">Le plan du géomètre décrit l’immeuble. Plan Vivant montre où il en est.</p>
 </section>
@@ -477,17 +517,18 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
 
   /* --- demo data (valeurs réelles de l'Excel, statuts d'exemple) --- */
   const ROWS = [
-    { id: 'IL 12A/00/G0', lot: '1201', type: 'T2', surf: 29.5, vide: false, dpe: 'G', color: 'p-blue', w: 112, rooms: ['Séjour', 'Chambre'], statut: 'nouvelle', note: 'Exemple : réunion avec le 1202 à l’étude, plans architecte attendus.' },
-    { id: 'IL 12A/00/D0', lot: '1202', type: 'T2', surf: 31.2, vide: false, dpe: 'E', color: 'p-purple', w: 112, rooms: ['Séjour', 'Chambre'], statut: 'occupe', note: '' },
+    { lot: '1201', locaux: [['IL 12A/00/G0', 'RDC', 29.5]], type: 'T2', dpe: 'G', color: 'p-blue', w: 112, rooms: ['Séjour', 'Chambre'], statut: 'nouvelle', note: 'Exemple : réunion avec le 1202 à l’étude, plans architecte attendus.', maj: '07/10/2026' },
+    { lot: '1202', locaux: [['IL 12A/00/D0', 'RDC', 31.2]], type: 'T2', dpe: 'E', color: 'p-purple', w: 112, rooms: ['Séjour', 'Chambre'], statut: 'occupe', note: '', maj: '' },
     { hall: true, w: 42 },
-    { id: 'IL 10A/00/G0', lot: '1002', type: 'T2', surf: 24.2, vide: false, dpe: '', color: 'p-pink', w: 104, rooms: ['Séjour', 'Chambre'], statut: 'travaux', note: 'Exemple : réfection salle d’eau, fin prévue fin novembre.' },
+    { lot: '1002', locaux: [['IL 10A/00/G0', 'RDC', 24.2]], type: 'T2', dpe: '', color: 'p-pink', w: 104, rooms: ['Séjour', 'Chambre'], statut: 'travaux', note: 'Exemple : réfection salle d’eau, fin prévue fin novembre.', maj: '07/10/2026' },
     { hall: true, w: 42 },
-    { id: 'IL 10A/00/D0', lot: '1001', type: 'T2', surf: 23.1, vide: false, dpe: '', color: 'p-green', w: 104, rooms: ['Pièce', 'Cuisine'], statut: 'occupe', note: '' },
-    { id: 'IL 08A/00/G0', lot: '800', type: '', surf: 29.2, vide: false, dpe: '', color: 'p-blue', w: 96, rooms: ['Local commercial'], statut: 'occupe', note: '' },
+    { lot: '1001', locaux: [['IL 10A/00/D0', 'RDC', 23.1]], type: 'T2', dpe: '', color: 'p-green', w: 104, rooms: ['Pièce', 'Cuisine'], statut: 'occupe', note: '', maj: '' },
+    { lot: '800', locaux: [['IL 08A/00/G0', 'RDC', 29.2]], type: '', dpe: '', color: 'p-blue', w: 96, rooms: ['Local commercial'], statut: 'occupe', note: '', maj: '' },
     { hall: true, w: 42 },
-    { id: 'IL 08A/00/D0', lot: '801', type: 'PRO', surf: 75.7, vide: true, dpe: '', color: 'p-purple', w: 130, rooms: ['Atelier'], statut: 'vide', note: 'Atelier' },
-    { id: 'IL 06A/00/G0', lot: '600', type: 'PRO', surf: 49.8, vide: true, dpe: '', color: 'p-pink', w: 112, rooms: ['Atelier 1', 'Atelier 2'], statut: 'vide', note: 'Ateliers' },
+    { lot: '801', locaux: [['IL 08A/00/D0', 'RDC', 75.7]], type: 'PRO', dpe: '', color: 'p-purple', w: 130, rooms: ['Atelier'], statut: 'vide', note: 'Atelier', maj: '' },
+    { lot: '102', locaux: [['TO 57A/00/G0', 'RDC', 66.4], ['TO 57A/C0/G0', 'Cave', 87.1]], type: 'PRO', dpe: '', color: 'p-pink', w: 112, rooms: ['Boulangerie'], statut: 'occupe', note: 'Boulangerie, laboratoire en cave.', maj: '', extra: '+ CAVE' },
   ];
+  ROWS.forEach(r => { if (r.locaux) r.surf = r.locaux.reduce((t, l) => t + l[2], 0); });
   const LOTS = ROWS.filter(r => !r.hall);
   const STAT = { occupe: 'Occupé', vide: 'Vide', travaux: 'En travaux', nouvelle: 'Nouvelle version' };
   const DPEC = { A: 'dpe-a', B: 'dpe-b', C: 'dpe-c', D: 'dpe-d', E: 'dpe-e', F: 'dpe-f', G: 'dpe-g' };
@@ -519,7 +560,8 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
     const ft = el('text', { x: x + r.w * .27, y: MID + 34, 'text-anchor': 'middle', 'font-size': 10, fill: '#fff', stroke: 'none', 'font-family': 'var(--f-mono)' }, r.fut); ft.textContent = 'FUTUR';
     el('circle', { cx: x + r.w / 2, cy: 92, r: 21, fill: '#fff', stroke: 'var(--p-ink)', 'stroke-width': 1.4, 'pointer-events': 'none' }, g);
     const lt = el('text', { x: x + r.w / 2, y: 97, 'text-anchor': 'middle', 'font-size': 14, 'font-family': 'var(--f-mono)', fill: 'var(--p-ink)', 'pointer-events': 'none' }, g); lt.textContent = r.lot;
-    r.tag = el('text', { x: x + r.w / 2, y: 140, 'text-anchor': 'middle', 'font-size': 10.5, 'font-weight': 700, 'letter-spacing': '1', 'font-family': 'var(--f-mono)', fill: 'var(--p-ink)', 'pointer-events': 'none' }, g);
+    if (r.extra) { const ex = el('text', { x: x + r.w / 2, y: 128, 'text-anchor': 'middle', 'font-size': 10, 'font-family': 'var(--f-mono)', fill: 'var(--p-ink)', 'pointer-events': 'none' }, g); ex.textContent = r.extra; }
+    r.tag = el('text', { x: x + r.w / 2, y: 146, 'text-anchor': 'middle', 'font-size': 10.5, 'font-weight': 700, 'letter-spacing': '1', 'font-family': 'var(--f-mono)', fill: 'var(--p-ink)', 'pointer-events': 'none' }, g);
     r.hl = el('rect', { class: 'hl', x: x + 2, y: T + 2, width: r.w - 4, height: B - T - 4 }, g);
     r.g = g; r.x = x;
     g.addEventListener('click', () => select(r));
@@ -557,30 +599,34 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
   }
 
   /* --- tableau façon Excel --- */
+  function m2(v) { return v.toFixed(1).replace('.', ','); }
+  function touch(r) { r.maj = new Date().toLocaleDateString('fr-FR'); if (r.mj) r.mj.textContent = r.maj; }
   const tb = $('#xl tbody');
   LOTS.forEach(r => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="mono">${r.id}</td><td class="mono">${r.lot}</td><td>${r.type || '<span class="badge">—</span>'}</td><td class="mono">${r.surf.toFixed(1).replace('.', ',')}</td><td class="vc mono"></td><td class="mono">${r.dpe || '<span class="badge">vide</span>'}</td><td class="st"><select aria-label="Statut du lot ${r.lot}">${Object.entries(STAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></td><td class="note"><input aria-label="Notes du lot ${r.lot}" type="text"></td>`;
-    r.tr = tr; r.sel = $('select', tr); r.inp = $('input', tr); r.vc = $('.vc', tr);
+    tr.innerHTML = `<td class="mono">${r.lot}</td><td class="mono">${r.locaux.map(l => l[0]).join('<br>')}</td><td>${r.locaux.map(l => l[1]).join(', ')}</td><td class="mono">${m2(r.surf)}</td><td class="vc mono"></td><td class="st"><select aria-label="Statut du lot ${r.lot}">${Object.entries(STAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></td><td class="note"><input aria-label="Notes du lot ${r.lot}" type="text"></td><td class="maj mono"></td>`;
+    r.tr = tr; r.sel = $('select', tr); r.inp = $('input', tr); r.vc = $('.vc', tr); r.mj = $('.maj', tr);
     tr.addEventListener('click', e => { if (e.target.closest('select,input')) return; select(r, true); });
     r.sel.addEventListener('change', () => { setStatus(r, r.sel.value, 'xl'); });
-    r.inp.addEventListener('input', () => { r.note = r.inp.value; syncing(); if (fiche.lot === r) $('#fnote').value = r.note; });
+    r.inp.addEventListener('input', () => { r.note = r.inp.value; touch(r); syncing(); if (fiche.lot === r) $('#fnote').value = r.note; });
     r.inp.addEventListener('focus', () => select(r));
     tb.appendChild(tr);
   });
   function fillRow(r, flash) {
-    r.sel.value = r.statut; r.inp.value = r.note; r.vc.textContent = r.statut === 'vide' ? 'VRAI' : 'FAUX';
-    if (flash) [r.sel.parentElement, r.vc].forEach(td => { td.classList.remove('flash'); void td.offsetWidth; td.classList.add('flash'); });
+    const n = r.locaux.length;
+    r.sel.value = r.statut; r.inp.value = r.note; r.mj.textContent = r.maj || '—';
+    r.vc.textContent = (r.statut === 'vide' ? 'VRAI' : 'FAUX') + (n > 1 ? ` ×${n}` : '');
+    if (flash) [r.sel.parentElement, r.vc, r.mj].forEach(td => { td.classList.remove('flash'); void td.offsetWidth; td.classList.add('flash'); });
   }
   LOTS.forEach(r => fillRow(r));
 
   let syncT;
   function syncing() {
-    const s = $('#sync'); s.classList.add('busy'); s.lastElementChild.textContent = 'Écriture dans le fichier…';
-    clearTimeout(syncT); syncT = setTimeout(() => { s.classList.remove('busy'); s.lastElementChild.textContent = 'Synchronisé à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }, 700);
+    const s = $('#sync'); s.classList.add('busy'); s.lastElementChild.textContent = 'Agent : écriture dans Excel…';
+    clearTimeout(syncT); syncT = setTimeout(() => { s.classList.remove('busy'); s.lastElementChild.textContent = 'Agent local · synchronisé à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }, 700);
   }
   function setStatus(r, s, from) {
-    r.statut = s; r.vide = s === 'vide';
+    r.statut = s; touch(r);
     if (mode !== 'statut') setMode('statut');
     fillRow(r, from !== 'xl'); paint(); syncing();
     if (fiche.lot === r) $('#fstat').value = s;
@@ -600,13 +646,13 @@ table.xl{border-collapse:collapse;width:100%;min-width:760px;font-size:var(--ste
   const fiche = $('#fiche');
   function openFiche(r) {
     fiche.lot = r;
-    fiche.innerHTML = `<header><div><span class="label">Lot ${r.lot}</span><h3>${r.id}</h3></div><button class="close" type="button" aria-label="Fermer la fiche">×</button></header>
-      <dl><dt>Type</dt><dd>${r.type || '—'}</dd><dt>Surface</dt><dd>${r.surf.toFixed(1).replace('.', ',')} m²</dd><dt>DPE</dt><dd>${r.dpe || 'non renseigné'}</dd></dl>
+    fiche.innerHTML = `<header><div><span class="label">Fiche du lot</span><h3>Lot ${r.lot}</h3></div><button class="close" type="button" aria-label="Fermer la fiche">×</button></header>
+      <dl>${r.locaux.map(l => `<dt>${l[1]}</dt><dd>${l[0]} · ${m2(l[2])} m²</dd>`).join('')}<dt>Type</dt><dd>${r.type || '—'}</dd><dt>DPE</dt><dd>${r.dpe || 'non renseigné'}</dd></dl>
       <label class="label" for="fstat">Statut</label><select id="fstat">${Object.entries(STAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
       <label class="label" for="fnote">Notes</label><textarea id="fnote" placeholder="Ajouter une note…"></textarea>`;
     $('#fstat').value = r.statut; $('#fnote').value = r.note;
     $('#fstat').addEventListener('change', e => setStatus(r, e.target.value, 'plan'));
-    $('#fnote').addEventListener('input', e => { r.note = e.target.value; r.inp.value = r.note; const td = r.inp.parentElement; td.classList.remove('flash'); void td.offsetWidth; td.classList.add('flash'); syncing(); });
+    $('#fnote').addEventListener('input', e => { r.note = e.target.value; r.inp.value = r.note; touch(r); const td = r.inp.parentElement; td.classList.remove('flash'); void td.offsetWidth; td.classList.add('flash'); syncing(); });
     $('.close', fiche).addEventListener('click', () => { fiche.hidden = true; fiche.lot = null; });
     const wrap = $('#planwrap'); const scale = svg.clientWidth / 1010;
     let left = (r.x + r.w + 10) * scale - wrap.scrollLeft;
