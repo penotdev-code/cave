@@ -11,81 +11,74 @@
 <script src="/app.js" defer></script>
 </head>
 <body>
-
+<!--BODY-->
 <div class="login" id="login" hidden>
-  <form class="panel login-card" id="loginform">
-    <div class="brand"><b>Plan Vivant</b></div>
-    <p class="muted" id="login-building">Suivi des lots de l’immeuble</p>
+  <form class="login-card" id="loginform">
+    <b class="logo">Plan Vivant</b>
     <label class="field"><span>E-mail</span><input type="email" id="lg-email" autocomplete="username" required></label>
     <label class="field"><span>Mot de passe</span><input type="password" id="lg-pw" autocomplete="current-password" required></label>
     <p class="login-err" id="lg-err" role="alert" hidden></p>
     <button type="submit" class="btn" id="lg-btn">Se connecter</button>
-    <p class="muted" style="font-size:.8rem;margin:0">Pas de compte ? Demandez un accès à la gestionnaire de l’immeuble.</p>
+    <p class="muted small">Pas de compte ? Demandez un accès à la gestionnaire de l’immeuble.</p>
   </form>
 </div>
 
 <div class="app" id="app" hidden>
   <header class="top">
-    <div class="brand"><b>Plan Vivant</b><span id="building"></span></div>
+    <div class="brand"><b class="logo">Plan Vivant</b><span id="building"></span></div>
+    <form class="search" id="searchform" role="search">
+      <input id="q" type="search" placeholder="Aller au lot… (ex. 623)" autocomplete="off" aria-label="Rechercher un lot">
+    </form>
     <div class="actions">
-      <span class="sync" id="sync" data-s="">Connexion…</span>
+      <span class="sync" id="sync" data-s=""></span>
+      <button type="button" class="btn" id="export">Exporter Excel</button>
+      <button type="button" class="link" id="history-btn">Historique</button>
       <span class="who" id="who"></span>
-      <button type="button" class="btn" id="export">Exporter en Excel (.xlsx)</button>
-      <button type="button" class="btn ghost" id="logout">Déconnexion</button>
+      <button type="button" class="link" id="logout">Déconnexion</button>
     </div>
   </header>
 
-  <div class="summary" id="summary"></div>
+  <p class="hint" id="hint"></p>
 
-  <section class="panel work">
-    <div class="planpane">
-      <div class="toolbar">
-        <div class="grp">
-          <span class="eyebrow">Niveau</span>
-          <div class="seg" id="levels" role="group" aria-label="Niveau"></div>
-        </div>
-        <div class="grp">
-          <span class="eyebrow">Fond</span>
-          <div class="seg" role="group" aria-label="Calque de fond">
-            <button type="button" data-layer="occupation" aria-pressed="true">Occupation</button>
-            <button type="button" data-layer="dpe" aria-pressed="false">DPE</button>
-            <button type="button" data-layer="none" aria-pressed="false">Aucun</button>
-          </div>
-        </div>
-        <div class="grp">
-          <span class="eyebrow">Symboles</span>
-          <label class="chk"><input type="checkbox" id="s-travaux" checked> Travaux</label>
-          <label class="chk"><input type="checkbox" id="s-comments" checked> Commentaires</label>
-          <label class="chk"><input type="checkbox" id="s-alertes" checked> Alertes</label>
-        </div>
-        <form class="search" id="searchform" role="search">
-          <label class="eyebrow" for="q">Lot</label>
-          <input id="q" type="text" inputmode="numeric" placeholder="ex. 623" autocomplete="off">
-        </form>
+  <main class="split">
+    <section class="pane plan-pane" id="plan-pane" aria-label="Plan">
+      <div class="pane-bar">
+        <div class="tabs" id="levels" role="group" aria-label="Niveau"></div>
+        <div class="row-ctl"><span class="seg-label">Colorer selon</span>
+        <div class="seg" role="group" aria-label="Colorer les lots selon">
+          <button type="button" data-color="occ" aria-pressed="true">Occupation</button>
+          <button type="button" data-color="dpe" aria-pressed="false">DPE</button>
+        </div></div>
       </div>
-      <div class="planscroll"><svg id="plan" role="img" aria-label="Plan de l'étage"></svg></div>
-      <div class="legend" id="legend"></div>
-    </div>
-    <aside class="fiche" id="fiche" aria-live="polite"></aside>
-  </section>
+      <div class="plan-box"><svg id="plan" role="img" aria-label="Plan"></svg></div>
+      <div class="legend" id="legend" aria-label="Légende, cliquer pour filtrer"></div>
+    </section>
 
-  <section class="panel" style="margin-top:14px">
-    <div class="tabs" role="tablist">
-      <button type="button" role="tab" data-tab="table" aria-selected="true">Tous les lots</button>
-      <button type="button" role="tab" data-tab="journal" aria-selected="false" id="tab-journal-btn">Journal des modifications</button>
-      <span class="sp"></span><span class="cnt" id="count"></span>
-    </div>
-    <div id="tab-table" class="tbl">
-      <table>
-        <thead><tr id="thead"></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div id="tab-journal" hidden><ul class="journal" id="journal"></ul></div>
-  </section>
-
-  <p class="foot">Version 1. Le plan du RDC est redessiné d’après l’extrait du géomètre (lots 1201, 1202, 1002, 1001) ; les lots 800, 801 et 102 et le 2ᵉ étage sont des schémas provisoires portant les vrais numéros, en attendant les fichiers AutoCAD.</p>
+    <section class="pane table-pane" id="table-pane" aria-label="Tableau des lots">
+      <div class="pane-bar">
+        <span class="count" id="count"></span>
+        <label class="chk"><input type="checkbox" id="all"> Tous les niveaux</label>
+      </div>
+      <div class="table-box">
+        <table class="sheet">
+          <thead><tr>
+            <th scope="col">Lot</th><th scope="col" id="col-level" hidden>Niveau</th>
+            <th scope="col">Occupation</th><th scope="col">Travaux</th><th scope="col">DPE · date</th><th scope="col">Commentaires</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 </div>
-<div class="toast" id="toast" hidden></div>
+
+<div class="overlay" id="history" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="history-title">
+    <div class="dialog-head"><h2 id="history-title">Historique des modifications</h2><button type="button" class="link" id="history-close">Fermer</button></div>
+    <ul class="history" id="history-list"></ul>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<!--/BODY-->
 </body>
 </html>
