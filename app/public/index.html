@@ -32,6 +32,7 @@
     <div class="actions">
       <span class="sync" id="sync" data-s=""></span>
       <button type="button" class="btn" id="export">Exporter Excel</button>
+      <button type="button" class="btn" id="export-pdf">Exporter PDF</button>
       <button type="button" class="link" id="history-btn">Historique</button>
       <span class="who" id="who"></span>
       <button type="button" class="link" id="logout">Déconnexion</button>
@@ -77,6 +78,25 @@
     <div class="dialog-head"><h2 id="history-title">Historique des modifications</h2><button type="button" class="link" id="history-close">Fermer</button></div>
     <ul class="history" id="history-list"></ul>
   </div>
+</div>
+<div class="overlay" id="pdf" hidden>
+  <form class="dialog pdf-dialog" id="pdfform" role="dialog" aria-modal="true" aria-labelledby="pdf-title">
+    <div class="dialog-head"><h2 id="pdf-title">Exporter en PDF</h2><button type="button" class="link" id="pdf-close">Fermer</button></div>
+    <div class="pdf-body">
+      <fieldset><legend>Contenu</legend>
+        <label class="chk"><input type="checkbox" name="plan" checked> Le plan</label>
+        <label class="chk"><input type="checkbox" name="table" checked> Le tableau des lots</label>
+      </fieldset>
+      <fieldset><legend>Niveaux</legend>
+        <label class="chk"><input type="radio" name="levels" value="current" checked> <span id="pdf-current">Niveau affiché</span></label>
+        <label class="chk"><input type="radio" name="levels" value="all"> Tous les niveaux</label>
+      </fieldset>
+      <label class="chk" id="pdf-filter-row" hidden><input type="checkbox" name="filter"> <span id="pdf-filter-label">Uniquement le filtre en cours</span></label>
+      <p class="muted small">Le plan est coloré comme à l’écran (<span id="pdf-color">occupation</span>). Dans la fenêtre d’impression, choisissez <b>« Enregistrer au format PDF »</b>.</p>
+      <p class="login-err" id="pdf-err" role="alert" hidden></p>
+    </div>
+    <div class="pdf-foot"><button type="submit" class="btn">Créer le PDF</button></div>
+  </form>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <!--/BODY-->

@@ -182,3 +182,10 @@ button,select,input,textarea{font:inherit; color:inherit}
 
 .toast{position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); background:var(--ink); color:var(--sheet); padding:9px 15px; border-radius:8px; font-size:.88rem; z-index:20; max-width:calc(100% - 32px)}
 @media (min-width:1101px) and (max-width:1400px){ .cm-last{display:none} .sheet td, .sheet tbody th{padding-inline:6px} }
+/* Export PDF : fenêtre de choix */
+.pdf-dialog{width:min(460px,100%)}
+.pdf-body{padding:16px 18px; display:flex; flex-direction:column; gap:14px; overflow:auto}
+.pdf-body fieldset{border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+.pdf-body legend{font-family:var(--f-display); font-weight:700; font-size:.92rem; margin-bottom:6px; padding:0}
+.pdf-body p{margin:0}
+.pdf-foot{display:flex; justify-content:flex-end; padding:12px 18px; border-top:1px solid var(--rule)}

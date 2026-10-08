@@ -288,6 +288,122 @@ const PV = (() => {
       try { await B.saveFile(name, buf); } catch (e) { if (e && e.message) toast(e.message); }
     });
 
+    /* ===================== EXPORT PDF =====================
+       Un document à imprimer (plan vectoriel et/ou tableau) dans un cadre
+       invisible ; « Enregistrer au format PDF » dans la fenêtre d'impression. */
+    const pdfBox = $('#pdf'), pdfForm = $('#pdfform');
+    const FILTER_LABEL = f => !f ? '' : f === 'travaux' ? 'En travaux' : f === 'alertes' ? 'Alertes'
+      : f.startsWith('dpe:') ? (f.slice(4) ? 'DPE ' + f.slice(4) : 'Sans DPE') : OCC[f];
+    $('#export-pdf').addEventListener('click', () => {
+      $('#pdf-current').textContent = 'Niveau affiché (' + S.level.name + ')';
+      pdfForm.levels.value = S.all ? 'all' : 'current';
+      $('#pdf-filter-row').hidden = !S.filter;
+      pdfForm.filter.checked = !!S.filter;
+      $('#pdf-filter-label').textContent = 'Uniquement le filtre en cours : ' + FILTER_LABEL(S.filter);
+      $('#pdf-color').textContent = S.color === 'occ' ? 'occupation' : 'DPE';
+      $('#pdf-err').hidden = true;
+      pdfBox.hidden = false;
+    });
+    const closePdf = () => { pdfBox.hidden = true; $('#export-pdf').focus(); };
+    $('#pdf-close').addEventListener('click', closePdf);
+    pdfBox.addEventListener('click', e => { if (e.target === pdfBox) closePdf(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pdfBox.hidden) closePdf(); });
+    pdfForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const opt = { plan: pdfForm.plan.checked, table: pdfForm.table.checked, all: pdfForm.levels.value === 'all', filter: !!S.filter && pdfForm.filter.checked };
+      if (!opt.plan && !opt.table) { const er = $('#pdf-err'); er.textContent = 'Choisissez le plan, le tableau, ou les deux.'; er.hidden = false; return; }
+      pdfBox.hidden = true;
+      printPdf(opt);
+    });
+
+    // Le plan d'un niveau tel qu'il est affiché, en SVG autonome
+    function levelSvg(L, useFilter) {
+      const keep = { level: S.level, sel: S.sel, filter: S.filter };
+      S.level = L; S.sel = null; if (!useFilter) S.filter = null;
+      drawLevel(); paintPlan();
+      const out = svg.cloneNode(true);
+      Object.assign(S, keep); drawLevel(); paintPlan();
+      out.removeAttribute('id');
+      out.querySelectorAll('.hover,.is-sel').forEach(n => n.classList.remove('hover', 'is-sel'));
+      out.querySelectorAll('[tabindex]').forEach(n => { n.removeAttribute('tabindex'); n.removeAttribute('role'); });
+      return out.outerHTML;
+    }
+    function legendHtml(pool) {
+      const n = f => pool.filter(l => f(l, T(l.id))).length;
+      const items = (S.color === 'occ'
+        ? Object.keys(OCC).map(k => [OCCV[k], OCC[k], n((l, s) => s.occ === k)])
+        : DPE.concat('').map(k => [DPEV[k], k || 'Sans DPE', n((l, s) => s.dpe === k)])).filter(i => i[2]);
+      const trv = n((l, s) => s.travaux), al = n((l, s) => alerts(l, s).length > 0);
+      return `<div class="pp-legend">${items.map(([c, lab, k]) => `<span><i style="background:${c}"></i>${esc(lab)} <b>${k}</b></span>`).join('')}
+        ${trv ? `<span><i class="sw-hatch"></i>En travaux <b>${trv}</b></span>` : ''}${al ? `<span><i class="pp-warn">!</i>Alertes <b>${al}</b></span>` : ''}</div>`;
+    }
+    function tableHtml(lots, withLevel) {
+      const rows = lots.map(l => {
+        const s = T(l.id), al = alerts(l, s), list = cmts(l.id), last = list.slice(-1)[0];
+        return `<tr><th>${l.id}${al.length ? ' <span class="pp-warn">!</span>' : ''}<small>${esc([l.type, l.surf ? m2(l.surf) + ' m²' : ''].filter(Boolean).join(' · '))}</small></th>
+          ${withLevel ? `<td>${esc(l.niveaux)}</td>` : ''}
+          <td><span class="pp-pill" style="background:${OCCV[s.occ]}">${OCC[s.occ]}</span></td>
+          <td>${s.travaux ? 'Oui' + (s.fin ? ' · ' + esc(s.fin) : '') : '—'}</td>
+          <td><span class="pp-pill pp-dpe" style="background:${DPEV[s.dpe]}">${s.dpe || '—'}</span>${s.dpeDate ? ' ' + fmtDate(s.dpeDate) : ''}</td>
+          <td>${esc(al.join(' · '))}</td>
+          <td>${list.length ? `<b>${list.length}</b> · ${esc(last.txt)}` : ''}</td></tr>`;
+      }).join('');
+      return `<table class="pp-table"><thead><tr><th>Lot</th>${withLevel ? '<th>Niveau(x)</th>' : ''}<th>Occupation</th><th>Travaux</th><th>DPE · date</th><th>Alertes</th><th>Commentaires</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="7">Aucun lot.</td></tr>`}</tbody></table>`;
+    }
+    function printPdf(opt) {
+      const levels = opt.all ? LEVELS : [S.level];
+      const keepLot = l => !opt.filter || matches(l);
+      const d = new Date(), stamp = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+      const title = `Plan-Vivant_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const sub = [opt.all ? 'Tous les niveaux' : S.level.name, 'coloré selon ' + (S.color === 'occ' ? 'l’occupation' : 'le DPE'),
+        opt.filter ? 'filtre : ' + FILTER_LABEL(S.filter) : ''].filter(Boolean).join(' · ');
+      const head = `<header class="pp-head"><b>Plan Vivant</b><span>${esc(PLAN.immeuble || '')}</span><span class="pp-date">${stamp}</span></header><p class="pp-sub">${esc(sub)}</p>`;
+      let body = '';
+      if (opt.plan) levels.forEach((L, i) => {
+        body += `<section class="pp-page pp-plan">${i === 0 ? head : ''}<h2>${esc(L.name)}</h2>${levelSvg(L, opt.filter)}${legendHtml(LOTS.filter(l => l.level === L && keepLot(l)))}</section>`;
+      });
+      if (opt.table) {
+        const lots = LOTS.filter(l => levels.includes(l.level) && keepLot(l)).sort((a, b) => LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level) || a.id - b.id);
+        body += `<section class="pp-page pp-tab">${opt.plan ? '' : head}<h2>Tableau des lots <small>${lots.length} lot${lots.length > 1 ? 's' : ''}</small></h2>${tableHtml(lots, levels.length > 1)}</section>`;
+      }
+      const html = `<!doctype html><html lang="fr" data-theme="light"><head><meta charset="utf-8"><title>${title}</title>
+        <link rel="stylesheet" href="${location.origin}/styles.css"><style>
+        @page{size:A4 landscape; margin:10mm}
+        html,body{background:#fff!important; color:#111; padding:0; margin:0; font-size:11px}
+        *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+        .pp-page{break-after:page} .pp-page:last-child{break-after:auto}
+        .pp-head{display:flex; gap:14px; align-items:baseline; border-bottom:2px solid #111; padding-bottom:4px}
+        .pp-head b{font-family:var(--f-display); font-size:16px} .pp-date{margin-left:auto; color:#555}
+        .pp-sub{margin:4px 0 0; color:#555}
+        h2{font-family:var(--f-display); font-size:14px; margin:8px 0 6px} h2 small{font-weight:400; color:#555; font-size:11px; margin-left:6px}
+        .pp-plan svg{display:block; width:100%; height:auto; max-height:155mm}
+        .pp-plan .lot.dim{opacity:.2}
+        .pp-legend{display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:6px}
+        .pp-legend span{display:inline-flex; align-items:center; gap:5px} .pp-legend i{display:inline-block; width:14px; height:14px; border:1px solid #999; border-radius:3px}
+        .pp-warn{display:inline-grid!important; place-items:center; width:14px; height:14px; border-radius:50%; background:var(--bad); color:#fff; font-style:normal; font-weight:800; font-size:10px; border:0!important}
+        .pp-table{width:100%; border-collapse:collapse} .pp-table th,.pp-table td{border-bottom:1px solid #ccc; padding:4px 6px; text-align:left; vertical-align:top}
+        .pp-table thead th{border-bottom:2px solid #111; font-family:var(--f-display)} .pp-table thead{display:table-header-group} .pp-table tr{break-inside:avoid}
+        .pp-table tbody th small{display:block; font-weight:400; color:#555}
+        .pp-pill{display:inline-block; padding:1px 6px; border-radius:4px; border:1px solid rgba(0,0,0,.15)} .pp-dpe{font-weight:800; min-width:16px; text-align:center}
+        </style></head><body><div id="plan-print">${body}</div></body></html>`;
+      // Les styles du plan sont écrits pour #plan : on applique le même identifiant aux copies
+      const doc = html.replace(/<svg /g, '<svg id="plan" ');
+      const frame = document.createElement('iframe');
+      frame.setAttribute('aria-hidden', 'true');
+      frame.style.cssText = 'position:fixed; right:0; bottom:0; width:0; height:0; border:0; visibility:hidden';
+      document.body.appendChild(frame);
+      const w = frame.contentWindow;
+      w.document.open(); w.document.write(doc); w.document.close();
+      const go = async () => {
+        try { await w.document.fonts.ready; } catch {}
+        w.focus(); w.print();
+        setTimeout(() => frame.remove(), 60000);
+      };
+      if (w.document.readyState === 'complete') go(); else w.addEventListener('load', go, { once: true });
+      toast('Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF ».');
+    }
+
     /* ===================== HISTORIQUE ===================== */
     const hist = $('#history');
     function renderHistory() {
