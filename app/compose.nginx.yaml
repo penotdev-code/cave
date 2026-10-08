@@ -1,0 +1,6 @@
+# Variante pour un VPS où nginx occupe déjà les ports 80/443 :
+#   docker compose -f compose.yaml -f compose.nginx.yaml up -d --build app
+services:
+  app:
+    ports:
+      - "127.0.0.1:3000:3000"
