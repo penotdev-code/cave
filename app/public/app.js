@@ -289,8 +289,8 @@ const PV = (() => {
     });
 
     /* ===================== EXPORT PDF =====================
-       Un document à imprimer (plan vectoriel et/ou tableau) dans un cadre
-       invisible ; « Enregistrer au format PDF » dans la fenêtre d'impression. */
+       Un vrai fichier PDF téléchargé (pas d'impression : elle ne marche pas
+       partout, notamment sur Android) : plan(s) en image + tableau des lots. */
     const pdfBox = $('#pdf'), pdfForm = $('#pdfform');
     const FILTER_LABEL = f => !f ? '' : f === 'travaux' ? 'En travaux' : f === 'alertes' ? 'Alertes'
       : f.startsWith('dpe:') ? (f.slice(4) ? 'DPE ' + f.slice(4) : 'Sans DPE') : OCC[f];
@@ -312,96 +312,176 @@ const PV = (() => {
       e.preventDefault();
       const opt = { plan: pdfForm.plan.checked, table: pdfForm.table.checked, all: pdfForm.levels.value === 'all', filter: !!S.filter && pdfForm.filter.checked };
       if (!opt.plan && !opt.table) { const er = $('#pdf-err'); er.textContent = 'Choisissez le plan, le tableau, ou les deux.'; er.hidden = false; return; }
-      pdfBox.hidden = true;
-      printPdf(opt);
+      exportPdf(opt);
     });
+    async function exportPdf(opt) {
+      const btn = pdfForm.querySelector('[type="submit"]'), label = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Création du PDF…';
+      try {
+        if (!window.PvPdf) throw new Error('Le module PDF n’a pas pu se charger. Rechargez la page.');
+        const blob = await buildPdf(opt);
+        const d = new Date(), name = `Plan-Vivant_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.pdf`;
+        await B.saveFile(name, await blob.arrayBuffer(), 'application/pdf');
+        pdfBox.hidden = true;
+        toast('PDF téléchargé : ' + name);
+      } catch (e) {
+        const er = $('#pdf-err'); er.textContent = (e && e.message) || 'Le PDF n’a pas pu être créé.'; er.hidden = false;
+      } finally { btn.disabled = false; btn.textContent = label; }
+    }
 
-    // Le plan d'un niveau tel qu'il est affiché, en SVG autonome
-    function levelSvg(L, useFilter) {
+    // Le plan d'un niveau tel qu'il est affiché, en image : on le dessine dans
+    // #plan en thème clair, on recopie les styles calculés sur une copie, puis
+    // on la rend dans un canvas (les variables CSS n'existent pas hors de la page).
+    const STYLE_PROPS = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity', 'opacity', 'font-size', 'font-weight', 'font-style', 'letter-spacing', 'display'];
+    function withLightTheme(fn) {
+      const root = document.documentElement, prev = root.getAttribute('data-theme');
+      root.setAttribute('data-theme', 'light');
+      try { return fn(); } finally { if (prev === null) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', prev); }
+    }
+    function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+    function levelImage(L, useFilter) {
       const keep = { level: S.level, sel: S.sel, filter: S.filter };
-      S.level = L; S.sel = null; if (!useFilter) S.filter = null;
-      drawLevel(); paintPlan();
-      const out = svg.cloneNode(true);
+      let markup, vb;
+      withLightTheme(() => {
+        S.level = L; S.sel = null; if (!useFilter) S.filter = null;
+        drawLevel(); paintPlan();
+        const live = [svg, ...svg.querySelectorAll('*')];
+        const copy = svg.cloneNode(true), copies = [copy, ...copy.querySelectorAll('*')];
+        live.forEach((n, i) => {
+          const cs = getComputedStyle(n), c = copies[i];
+          c.removeAttribute('class');
+          const st = STYLE_PROPS.map(p => `${p}:${cs.getPropertyValue(p)}`).join(';') + ';font-family:Helvetica,Arial,sans-serif';
+          c.setAttribute('style', st);
+        });
+        copy.querySelectorAll('[tabindex]').forEach(n => { n.removeAttribute('tabindex'); n.removeAttribute('role'); });
+        copy.setAttribute('xmlns', NS);
+        vb = L.vb;
+        markup = new XMLSerializer().serializeToString(copy);
+      });
       Object.assign(S, keep); drawLevel(); paintPlan();
-      out.removeAttribute('id');
-      out.querySelectorAll('.hover,.is-sel').forEach(n => n.classList.remove('hover', 'is-sel'));
-      out.querySelectorAll('[tabindex]').forEach(n => { n.removeAttribute('tabindex'); n.removeAttribute('role'); });
-      return out.outerHTML;
+      return new Promise((resolve, reject) => {
+        const maxPx = 3000, scale = maxPx / Math.max(vb[2], vb[3]);
+        const w = Math.round(vb[2] * scale), h = Math.round(vb[3] * scale);
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+          c.toBlob(b => b ? b.arrayBuffer().then(a => resolve({ jpeg: new Uint8Array(a), w, h })) : reject(new Error('Image du plan impossible')), 'image/jpeg', 0.9);
+        };
+        img.onerror = () => reject(new Error('Le plan n’a pas pu être converti en image.'));
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(markup.replace('<svg', `<svg width="${w}" height="${h}"`));
+      });
     }
-    function legendHtml(pool) {
-      const n = f => pool.filter(l => f(l, T(l.id))).length;
-      const items = (S.color === 'occ'
-        ? Object.keys(OCC).map(k => [OCCV[k], OCC[k], n((l, s) => s.occ === k)])
-        : DPE.concat('').map(k => [DPEV[k], k || 'Sans DPE', n((l, s) => s.dpe === k)])).filter(i => i[2]);
-      const trv = n((l, s) => s.travaux), al = n((l, s) => alerts(l, s).length > 0);
-      return `<div class="pp-legend">${items.map(([c, lab, k]) => `<span><i style="background:${c}"></i>${esc(lab)} <b>${k}</b></span>`).join('')}
-        ${trv ? `<span><i class="sw-hatch"></i>En travaux <b>${trv}</b></span>` : ''}${al ? `<span><i class="pp-warn">!</i>Alertes <b>${al}</b></span>` : ''}</div>`;
-    }
-    function tableHtml(lots, withLevel) {
-      const rows = lots.map(l => {
-        const s = T(l.id), al = alerts(l, s), list = cmts(l.id), last = list.slice(-1)[0];
-        return `<tr><th>${l.id}${al.length ? ' <span class="pp-warn">!</span>' : ''}<small>${esc([l.type, l.surf ? m2(l.surf) + ' m²' : ''].filter(Boolean).join(' · '))}</small></th>
-          ${withLevel ? `<td>${esc(l.niveaux)}</td>` : ''}
-          <td><span class="pp-pill" style="background:${OCCV[s.occ]}">${OCC[s.occ]}</span></td>
-          <td>${s.travaux ? 'Oui' + (s.fin ? ' · ' + esc(s.fin) : '') : '—'}</td>
-          <td><span class="pp-pill pp-dpe" style="background:${DPEV[s.dpe]}">${s.dpe || '—'}</span>${s.dpeDate ? ' ' + fmtDate(s.dpeDate) : ''}</td>
-          <td>${esc(al.join(' · '))}</td>
-          <td>${list.length ? `<b>${list.length}</b> · ${esc(last.txt)}` : ''}</td></tr>`;
-      }).join('');
-      return `<table class="pp-table"><thead><tr><th>Lot</th>${withLevel ? '<th>Niveau(x)</th>' : ''}<th>Occupation</th><th>Travaux</th><th>DPE · date</th><th>Alertes</th><th>Commentaires</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="7">Aucun lot.</td></tr>`}</tbody></table>`;
-    }
-    function printPdf(opt) {
+    // Les PDF « simples » n'ont pas tous les caractères : ᵉ → e, etc.
+    const pdfTxt = s => String(s ?? '').replace(/ᵉ/g, 'e').replace(/ʳ/g, 'r').replace(/[  ]/g, ' ');
+
+    async function buildPdf(opt) {
+      const { PdfDoc, textWidth } = window.PvPdf;
+      const doc = new PdfDoc();
+      const W = 841.89, H = 595.28, M = 28;
       const levels = opt.all ? LEVELS : [S.level];
       const keepLot = l => !opt.filter || matches(l);
       const d = new Date(), stamp = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
-      const title = `Plan-Vivant_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
       const sub = [opt.all ? 'Tous les niveaux' : S.level.name, 'coloré selon ' + (S.color === 'occ' ? 'l’occupation' : 'le DPE'),
         opt.filter ? 'filtre : ' + FILTER_LABEL(S.filter) : ''].filter(Boolean).join(' · ');
-      const head = `<header class="pp-head"><b>Plan Vivant</b><span>${esc(PLAN.immeuble || '')}</span><span class="pp-date">${stamp}</span></header><p class="pp-sub">${esc(sub)}</p>`;
-      let body = '';
-      if (opt.plan) levels.forEach((L, i) => {
-        body += `<section class="pp-page pp-plan">${i === 0 ? head : ''}<h2>${esc(L.name)}</h2>${levelSvg(L, opt.filter)}${legendHtml(LOTS.filter(l => l.level === L && keepLot(l)))}</section>`;
-      });
+      // Couleurs du thème clair, lues dans la feuille de styles
+      const col = withLightTheme(() => ({
+        occ: Object.fromEntries(Object.keys(OCC).map(k => [k, cssVar('--st-' + k) || '#ffffff'])),
+        dpe: Object.fromEntries(DPE.map(k => [k, cssVar('--dpe-' + k.toLowerCase())]).concat([['', cssVar('--dpe-none') || '#e1e5ea']])),
+        signal: cssVar('--signal') || '#D25A1C', bad: cssVar('--bad') || '#C0261F',
+      }));
+      const fit = (s, width, size, bold) => {
+        s = pdfTxt(s).replace(/\s+/g, ' ');
+        if (textWidth(s, size, bold) <= width) return s;
+        while (s && textWidth(s + '…', size, bold) > width) s = s.slice(0, -1);
+        return s + '…';
+      };
+      const header = (p, title) => {
+        p.text('Plan Vivant', M, H - M - 10, 15, { bold: true });
+        p.text(fit(PLAN.immeuble || '', 420, 10), M + 100, H - M - 10, 10, { color: '#444444' });
+        p.text(stamp, W - M - textWidth(stamp, 10), H - M - 10, 10, { color: '#444444' });
+        p.line(M, H - M - 17, W - M, H - M - 17, '#111111', 1.2);
+        p.text(pdfTxt(sub), M, H - M - 31, 9, { color: '#555555' });
+        p.text(pdfTxt(title), M, H - M - 50, 13, { bold: true });
+      };
+
+      if (opt.plan) {
+        for (const L of levels) {
+          const im = await levelImage(L, opt.filter);
+          const p = doc.addPage(W, H);
+          header(p, L.name);
+          // Légende du niveau
+          const pool = LOTS.filter(l => l.level === L && keepLot(l));
+          const n = f => pool.filter(l => f(l, T(l.id))).length;
+          const items = (S.color === 'occ'
+            ? Object.keys(OCC).map(k => [col.occ[k], OCC[k], n((l, s) => s.occ === k)])
+            : DPE.concat('').map(k => [col.dpe[k], k || 'Sans DPE', n((l, s) => s.dpe === k)])).filter(i => i[2]);
+          let x = M; const ly = M + 4;
+          const legend = (draw, label) => { const t = pdfTxt(label); draw(x); p.text(t, x + 15, ly + 1, 9); x += 15 + textWidth(t, 9) + 16; };
+          items.forEach(([c, lab, k]) => legend(x0 => p.rect(x0, ly - 1, 10, 10, c, '#888888'), `${lab} (${k})`));
+          const trv = n((l, s) => s.travaux), al = n((l, s) => alerts(l, s).length > 0);
+          if (trv) legend(x0 => { p.rect(x0, ly - 1, 10, 10, '#ffffff', col.signal); p.line(x0 + 2, ly - 1, x0 + 10, ly + 7, col.signal, 2); p.line(x0, ly + 3, x0 + 6, ly + 9, col.signal, 2); }, `En travaux (${trv})`);
+          if (al) legend(x0 => p.rect(x0, ly - 1, 10, 10, col.bad), `Alertes (${al})`);
+          // Plan : le plus grand possible entre l'en-tête et la légende
+          const boxW = W - 2 * M, boxH = H - M - 60 - (M + 22);
+          const s = Math.min(boxW / im.w, boxH / im.h);
+          const iw = im.w * s, ih = im.h * s;
+          p.image(im.jpeg, im.w, im.h, M + (boxW - iw) / 2, M + 22 + (boxH - ih) / 2, iw, ih);
+        }
+      }
+
       if (opt.table) {
         const lots = LOTS.filter(l => levels.includes(l.level) && keepLot(l)).sort((a, b) => LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level) || a.id - b.id);
-        body += `<section class="pp-page pp-tab">${opt.plan ? '' : head}<h2>Tableau des lots <small>${lots.length} lot${lots.length > 1 ? 's' : ''}</small></h2>${tableHtml(lots, levels.length > 1)}</section>`;
+        const multi = levels.length > 1;
+        const cols = [
+          { h: 'Lot', w: 105 },
+          multi && { h: 'Niveau(x)', w: 70 },
+          { h: 'Occupation', w: 90 },
+          { h: 'Travaux', w: 90 },
+          { h: 'DPE · date', w: 80 },
+          { h: 'Alertes', w: 150 },
+          { h: 'Commentaires', w: 0 },
+        ].filter(Boolean);
+        cols[cols.length - 1].w = W - 2 * M - cols.slice(0, -1).reduce((t, c) => t + c.w, 0);
+        const ROW = 26;
+        let p, y;
+        const newPage = first => {
+          p = doc.addPage(W, H);
+          header(p, `Tableau des lots — ${lots.length} lot${lots.length > 1 ? 's' : ''}` + (first ? '' : ' (suite)'));
+          y = H - M - 74;
+          let x = M;
+          cols.forEach(c => { p.text(c.h, x + 4, y, 9, { bold: true }); x += c.w; });
+          p.line(M, y - 6, W - M, y - 6, '#111111', 1);
+          y -= 6 + ROW;
+        };
+        newPage(true);
+        lots.forEach((l, i) => {
+          if (y < M) newPage(false);
+          const s = T(l.id), al = alerts(l, s), list = cmts(l.id), last = list.slice(-1)[0];
+          if (i % 2) p.rect(M, y - 6, W - 2 * M, ROW, '#f4f6f8');
+          let x = M;
+          for (const c of cols) {
+            const tx = x + 4, top = y + 10, w = c.w - 8;
+            if (c.h === 'Lot') {
+              p.text(String(l.id), tx, top, 10, { bold: true });
+              if (al.length) p.rect(tx + textWidth(String(l.id), 10, true) + 4, top - 1, 7, 7, col.bad);
+              p.text(fit([l.type, l.surf ? m2(l.surf) + ' m²' : ''].filter(Boolean).join(' · '), w, 8), tx, top - 11, 8, { color: '#555555' });
+            } else if (c.h === 'Niveau(x)') p.text(fit(l.niveaux, w, 9), tx, top - 5, 9);
+            else if (c.h === 'Occupation') { p.rect(tx, top - 9, 10, 10, col.occ[s.occ], '#888888'); p.text(fit(OCC[s.occ], w - 14, 9), tx + 14, top - 7, 9); }
+            else if (c.h === 'Travaux') p.text(fit(s.travaux ? 'Oui' + (s.fin ? ' · ' + s.fin : '') : '—', w, 9), tx, top - 5, 9);
+            else if (c.h === 'DPE · date') {
+              p.rect(tx, top - 10, 16, 12, col.dpe[s.dpe] || col.dpe[''], '#888888');
+              p.text(s.dpe || '–', tx + 5, top - 7, 9, { bold: true });
+              if (s.dpeDate) p.text(fmtDate(s.dpeDate), tx + 21, top - 7, 9);
+            } else if (c.h === 'Alertes') p.text(fit(al.join(' · '), w, 8), tx, top - 5, 8, { color: '#7a1712' });
+            else if (list.length) p.text(fit(`${list.length} · ${last.txt}`, w, 8), tx, top - 5, 8);
+            x += c.w;
+          }
+          y -= ROW;
+        });
+        if (!lots.length) p.text('Aucun lot.', M, y, 10);
       }
-      const html = `<!doctype html><html lang="fr" data-theme="light"><head><meta charset="utf-8"><title>${title}</title>
-        <link rel="stylesheet" href="${location.origin}/styles.css"><style>
-        @page{size:A4 landscape; margin:10mm}
-        html,body{background:#fff!important; color:#111; padding:0; margin:0; font-size:11px}
-        *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
-        .pp-page{break-after:page} .pp-page:last-child{break-after:auto}
-        .pp-head{display:flex; gap:14px; align-items:baseline; border-bottom:2px solid #111; padding-bottom:4px}
-        .pp-head b{font-family:var(--f-display); font-size:16px} .pp-date{margin-left:auto; color:#555}
-        .pp-sub{margin:4px 0 0; color:#555}
-        h2{font-family:var(--f-display); font-size:14px; margin:8px 0 6px} h2 small{font-weight:400; color:#555; font-size:11px; margin-left:6px}
-        .pp-plan svg{display:block; width:100%; height:auto; max-height:155mm}
-        .pp-plan .lot.dim{opacity:.2}
-        .pp-legend{display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:6px}
-        .pp-legend span{display:inline-flex; align-items:center; gap:5px} .pp-legend i{display:inline-block; width:14px; height:14px; border:1px solid #999; border-radius:3px}
-        .pp-warn{display:inline-grid!important; place-items:center; width:14px; height:14px; border-radius:50%; background:var(--bad); color:#fff; font-style:normal; font-weight:800; font-size:10px; border:0!important}
-        .pp-table{width:100%; border-collapse:collapse} .pp-table th,.pp-table td{border-bottom:1px solid #ccc; padding:4px 6px; text-align:left; vertical-align:top}
-        .pp-table thead th{border-bottom:2px solid #111; font-family:var(--f-display)} .pp-table thead{display:table-header-group} .pp-table tr{break-inside:avoid}
-        .pp-table tbody th small{display:block; font-weight:400; color:#555}
-        .pp-pill{display:inline-block; padding:1px 6px; border-radius:4px; border:1px solid rgba(0,0,0,.15)} .pp-dpe{font-weight:800; min-width:16px; text-align:center}
-        </style></head><body><div id="plan-print">${body}</div></body></html>`;
-      // Les styles du plan sont écrits pour #plan : on applique le même identifiant aux copies
-      const doc = html.replace(/<svg /g, '<svg id="plan" ');
-      const frame = document.createElement('iframe');
-      frame.setAttribute('aria-hidden', 'true');
-      frame.style.cssText = 'position:fixed; right:0; bottom:0; width:0; height:0; border:0; visibility:hidden';
-      document.body.appendChild(frame);
-      const w = frame.contentWindow;
-      w.document.open(); w.document.write(doc); w.document.close();
-      const go = async () => {
-        try { await w.document.fonts.ready; } catch {}
-        w.focus(); w.print();
-        setTimeout(() => frame.remove(), 60000);
-      };
-      if (w.document.readyState === 'complete') go(); else w.addEventListener('load', go, { once: true });
-      toast('Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF ».');
+      return doc.save();
     }
 
     /* ===================== HISTORIQUE ===================== */
@@ -468,9 +548,9 @@ const PV = (() => {
       reload,
       saveLot: (id, body) => json('PUT', '/api/lots/' + encodeURIComponent(id), body),
       addComment: (lot, txt, vis) => json('POST', '/api/comments', { lot, txt, vis }),
-      saveFile(name, buf) {
+      saveFile(name, buf, type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = name;
+        a.href = URL.createObjectURL(new Blob([buf], { type })); a.download = name;
         document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       },
       logout: true,
