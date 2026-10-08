@@ -1,0 +1,625 @@
+<title>Démo Plan Vivant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout : une application de gestion — barre d'en-tête, résumé chiffré, plan à gauche et fiche du lot à droite, tableau de tous les lots dessous. */
+:root{
+  --bg:#EDF0F3; --sheet:#FFFFFF; --ink:#142030; --muted:#566373; --rule:#D0D7DF; --rule-strong:#9AA6B3;
+  --accent:#1F4FD1; --accent-soft:#E3E9FB; --accent-ink:#FFFFFF;
+  --signal:#D25A1C; --ok:#1E7A55; --warn:#A86A00; --bad:#C0261F;
+  --st-loue:#BFE3D1; --st-vacant:#E9EDF1; --st-preavis:#F7D98C; --st-nr:#FFFFFF;
+  --dpe-a:#009C6D; --dpe-b:#52B153; --dpe-c:#A5CC74; --dpe-d:#F4E70F; --dpe-e:#F0B50F; --dpe-f:#EB8235; --dpe-g:#D7221F; --dpe-none:#DCE1E6;
+  --wall:#142030; --hall:#F4F1D8; --void:#F7F8FA;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E141B; --sheet:#16202A; --ink:#E3E8EE; --muted:#96A2AF; --rule:#2A3541; --rule-strong:#4A5767;
+  --accent:#86A2FF; --accent-soft:#1D2947; --accent-ink:#0E141B; --signal:#FF8E52; --ok:#5CCB9B; --warn:#F2B84B; --bad:#FF7B72;
+  --st-loue:#285E49; --st-vacant:#26313D; --st-preavis:#77612A; --st-nr:#16202A;
+  --dpe-none:#2E3945; --wall:#C9D2DC; --hall:#2A2A1E; --void:#121A22; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E141B; --sheet:#16202A; --ink:#E3E8EE; --muted:#96A2AF; --rule:#2A3541; --rule-strong:#4A5767;
+  --accent:#86A2FF; --accent-soft:#1D2947; --accent-ink:#0E141B; --signal:#FF8E52; --ok:#5CCB9B; --warn:#F2B84B; --bad:#FF7B72;
+  --st-loue:#285E49; --st-vacant:#26313D; --st-preavis:#77612A; --st-nr:#16202A;
+  --dpe-none:#2E3945; --wall:#C9D2DC; --hall:#2A2A1E; --void:#121A22; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.5; padding-inline:16px; padding-block:0 40px}
+.app{max-width:1400px; margin-inline:auto}
+.mono{font-family:var(--f-mono); font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono); font-size:.72rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+button,select,input,textarea{font:inherit; color:var(--ink)}
+
+/* header */
+.top{display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center; justify-content:space-between; padding-block:14px 12px}
+.brand{display:flex; gap:12px; align-items:baseline; flex-wrap:wrap}
+.brand b{font-family:var(--f-display); font-weight:800; font-stretch:85%; font-size:1.55rem; letter-spacing:-.01em}
+.brand span{font-family:var(--f-mono); font-size:.8rem; color:var(--muted)}
+.actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.sync{font-family:var(--f-mono); font-size:.74rem; padding:4px 10px; border-radius:99px; border:1px solid var(--rule-strong); color:var(--muted); background:var(--sheet); display:inline-flex; gap:6px; align-items:center}
+.sync::before{content:""; width:8px; height:8px; border-radius:50%; background:var(--rule-strong)}
+.sync[data-s="ok"]::before{background:var(--ok)} .sync[data-s="busy"]::before{background:var(--warn)} .sync[data-s="ro"]::before{background:var(--accent)} .sync[data-s="err"]::before{background:var(--bad)}
+.btn{font-size:.88rem; font-weight:600; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:6px; padding:7px 14px; cursor:pointer; display:inline-flex; gap:8px; align-items:center}
+.btn.ghost{background:var(--sheet); color:var(--accent)}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.banner{background:var(--accent-soft); border:1px solid var(--rule); border-radius:6px; padding:8px 12px; font-size:.86rem; margin-bottom:12px}
+
+/* summary */
+.summary{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:12px}
+.stat{background:var(--sheet); border:1px solid var(--rule); border-radius:6px; padding:10px 12px; cursor:pointer; text-align:left}
+.stat[aria-pressed="true"]{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent)}
+.stat .n{font-family:var(--f-display); font-weight:750; font-size:1.6rem; font-stretch:85%; line-height:1.1; display:block}
+.stat .l{font-size:.8rem; color:var(--muted); display:flex; gap:6px; align-items:center}
+.sw{display:inline-block; width:11px; height:11px; border-radius:2px; border:1px solid var(--rule-strong)}
+
+/* workspace */
+.panel{background:var(--sheet); border:1px solid var(--rule); border-radius:6px}
+.work{display:grid; grid-template-columns:minmax(0,1fr) 360px; overflow:hidden}
+@media (max-width:1000px){ .work{grid-template-columns:minmax(0,1fr)} }
+.planpane{min-width:0; border-right:1px solid var(--rule); display:flex; flex-direction:column}
+@media (max-width:1000px){ .planpane{border-right:0; border-bottom:1px solid var(--rule)} }
+.toolbar{display:flex; flex-wrap:wrap; gap:10px 22px; padding:10px 12px; border-bottom:1px solid var(--rule); align-items:center}
+.grp{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.seg{display:inline-flex; border:1px solid var(--rule-strong); border-radius:6px; overflow:hidden}
+.seg button{font-size:.84rem; border:0; background:var(--sheet); padding:5px 10px; cursor:pointer}
+.seg button + button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--sheet)}
+.chk{display:inline-flex; gap:5px; align-items:center; font-size:.84rem; cursor:pointer}
+.chk input{accent-color:var(--accent); width:15px; height:15px}
+.search{display:flex; gap:6px; align-items:center}
+.search input{width:130px; border:1px solid var(--rule-strong); border-radius:6px; padding:5px 9px; background:var(--sheet); font-size:.86rem}
+.planscroll{overflow:auto; padding:8px 10px 0}
+#plan{display:block; width:100%; min-width:760px; height:auto}
+#plan .lot{cursor:pointer}
+#plan .lot:focus{outline:none}
+#plan .lot .sel{stroke:var(--wall); stroke-width:2; fill:none}
+#plan .lot.is-sel .sel, #plan .lot:focus-visible .sel{stroke:var(--accent); stroke-width:5}
+#plan .lot.dim{opacity:.22}
+#plan .lot:hover .base{filter:brightness(.95)}
+.legend{display:flex; flex-wrap:wrap; gap:4px 14px; padding:8px 12px 12px; font-size:.8rem; color:var(--muted); align-items:center}
+.legend .note{margin-left:auto; font-style:italic}
+
+/* fiche */
+.fiche{padding:16px; display:flex; flex-direction:column; gap:14px; min-width:0; max-height:760px; overflow:auto}
+.fiche h2{font-family:var(--f-display); font-weight:800; font-stretch:85%; font-size:1.7rem; margin:0; line-height:1}
+.fhead{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+.kv{display:grid; grid-template-columns:auto minmax(0,1fr); gap:2px 12px; font-size:.84rem; margin:0}
+.kv dt{color:var(--muted)} .kv dd{margin:0; overflow-wrap:anywhere}
+.field{display:flex; flex-direction:column; gap:5px}
+.field > span:first-child{font-family:var(--f-mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+select,input[type="date"],input[type="text"],textarea{font-size:.88rem; background:var(--sheet); border:1px solid var(--rule-strong); border-radius:5px; padding:5px 8px}
+select:disabled,input:disabled,textarea:disabled{opacity:.6}
+textarea{width:100%; min-height:64px; resize:vertical}
+.alert{border-left:3px solid var(--bad); background:var(--bg); padding:6px 10px; font-size:.83rem; border-radius:0 4px 4px 0}
+.alert.warn{border-left-color:var(--warn)}
+.cmts{display:flex; flex-direction:column; gap:8px}
+.cmt{border:1px solid var(--rule); border-radius:5px; padding:7px 10px; font-size:.86rem; overflow-wrap:anywhere}
+.cmt .meta{display:flex; gap:8px; justify-content:space-between; font-family:var(--f-mono); font-size:.7rem; color:var(--muted); margin-bottom:2px; flex-wrap:wrap}
+.pill{font-family:var(--f-mono); font-size:.66rem; border-radius:99px; padding:0 7px; border:1px solid currentColor}
+.pill.int{color:var(--warn)} .pill.sh{color:var(--ok)}
+.ro{font-size:.82rem; color:var(--muted); border:1px dashed var(--rule-strong); border-radius:5px; padding:8px 10px}
+.empty{color:var(--muted); font-size:.9rem}
+
+/* bottom */
+.tabs{display:flex; border-bottom:1px solid var(--rule); flex-wrap:wrap; align-items:stretch}
+.tabs button{border:0; border-right:1px solid var(--rule); background:transparent; color:var(--muted); padding:9px 16px; cursor:pointer; font-size:.88rem}
+.tabs button[aria-selected="true"]{color:var(--ink); font-weight:600; box-shadow:inset 0 -2px 0 var(--accent)}
+.tabs .sp{flex:1}
+.tabs .cnt{padding:9px 14px; font-size:.8rem; color:var(--muted); align-self:center}
+.tbl{overflow:auto; max-height:460px}
+table{border-collapse:collapse; width:100%; font-size:.86rem}
+th,td{text-align:left; padding:7px 10px; border-bottom:1px solid var(--rule); white-space:nowrap}
+th{font-family:var(--f-mono); font-weight:500; font-size:.7rem; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--bg); position:sticky; top:0; z-index:1}
+th button{all:unset; cursor:pointer}
+th button:focus-visible{outline:2px solid var(--accent)}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--bg)}
+tbody tr.is-sel td{background:var(--accent-soft)}
+td.num{text-align:right}
+.dot{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; border:1px solid var(--rule-strong); vertical-align:-1px}
+.dpe{display:inline-grid; place-items:center; width:20px; height:18px; border-radius:3px; font-family:var(--f-display); font-weight:800; font-size:.78rem; color:#111}
+.dpe.g{color:#fff}
+.al{color:var(--bad); font-weight:600}
+.journal{list-style:none; margin:0; padding:10px 14px; display:flex; flex-direction:column; gap:6px; font-size:.86rem; max-height:460px; overflow:auto}
+.journal li{display:grid; grid-template-columns:130px minmax(0,1fr); gap:10px}
+.foot{font-size:.8rem; color:var(--muted); padding-top:12px; max-width:110ch}
+.toast{position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); background:var(--ink); color:var(--sheet); padding:8px 14px; border-radius:6px; font-size:.86rem; z-index:5; max-width:calc(100% - 32px)}
+@media (max-width:600px){ .journal li{grid-template-columns:minmax(0,1fr)} }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><b>Plan Vivant</b><span>Impasse Léger · rue de Tocqueville · Paris 17ᵉ</span></div>
+    <div class="actions">
+      <span class="sync" id="sync" data-s="">Connexion…</span>
+      <button type="button" class="btn" id="export">Exporter en Excel (.xlsx)</button>
+    </div>
+  </header>
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="summary" id="summary"></div>
+
+  <section class="panel work">
+    <div class="planpane">
+      <div class="toolbar">
+        <div class="grp">
+          <span class="eyebrow">Niveau</span>
+          <div class="seg" id="levels" role="group" aria-label="Niveau"></div>
+        </div>
+        <div class="grp">
+          <span class="eyebrow">Fond</span>
+          <div class="seg" role="group" aria-label="Calque de fond">
+            <button type="button" data-layer="occupation" aria-pressed="true">Occupation</button>
+            <button type="button" data-layer="dpe" aria-pressed="false">DPE</button>
+            <button type="button" data-layer="none" aria-pressed="false">Aucun</button>
+          </div>
+        </div>
+        <div class="grp">
+          <span class="eyebrow">Symboles</span>
+          <label class="chk"><input type="checkbox" id="s-travaux" checked> Travaux</label>
+          <label class="chk"><input type="checkbox" id="s-comments" checked> Commentaires</label>
+          <label class="chk"><input type="checkbox" id="s-alertes" checked> Alertes</label>
+        </div>
+        <form class="search" id="searchform" role="search">
+          <label class="eyebrow" for="q">Lot</label>
+          <input id="q" type="text" inputmode="numeric" placeholder="ex. 623" autocomplete="off">
+        </form>
+      </div>
+      <div class="planscroll"><svg id="plan" role="img" aria-label="Plan de l'étage"></svg></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <aside class="fiche" id="fiche" aria-live="polite"></aside>
+  </section>
+
+  <section class="panel" style="margin-top:14px">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="table" aria-selected="true">Tous les lots</button>
+      <button type="button" role="tab" data-tab="journal" aria-selected="false" id="tab-journal-btn">Journal des modifications</button>
+      <span class="sp"></span><span class="cnt" id="count"></span>
+    </div>
+    <div id="tab-table" class="tbl">
+      <table>
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div id="tab-journal" hidden><ul class="journal" id="journal"></ul></div>
+  </section>
+
+  <p class="foot">Démo. Le plan du RDC est redessiné d’après l’extrait du géomètre (lots 1201, 1202, 1002, 1001) ; les lots 800, 801 et 102 et tout le 2ᵉ étage sont des schémas provisoires qui portent les vrais numéros de lots, en attendant les fichiers AutoCAD. Identifiants, types et surfaces viennent de 30_LOCAUX quand ils sont connus. Les états de suivi et les commentaires de départ sont des exemples.</p>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (n, a = {}, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const m2 = n => n == null ? '' : n.toFixed(1).replace('.', ',');
+  const pad = n => String(n).padStart(2, '0');
+  const fmtDate = iso => iso ? iso.slice(0, 10).split('-').reverse().join('/') : '';
+  const fmtStamp = iso => { if (!iso) return ''; const d = new Date(iso); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  let toastT;
+  const toast = msg => { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); };
+
+  /* ================= Référentiel : 30_LOCAUX (connu) ================= */
+  const REF = {
+    '1201': { type: 'T2', locaux: [['IL 12A/00/G0', 'RDC', 29.5]] },
+    '1202': { type: 'T2', locaux: [['IL 12A/00/D0', 'RDC', 31.2]] },
+    '1002': { type: 'T2', locaux: [['IL 10A/00/G0', 'RDC', 24.2]] },
+    '1001': { type: 'T2', locaux: [['IL 10A/00/D0', 'RDC', 23.1]] },
+    '800':  { type: 'Commerce', locaux: [['IL 08A/00/G0', 'RDC', 29.2]] },
+    '801':  { type: 'PRO', locaux: [['IL 08A/00/D0', 'RDC', 75.7]] },
+    '102':  { type: 'PRO', locaux: [['TO 57A/00/G0', 'RDC', 66.4], ['TO 57A/C0/G0', 'Cave', 87.1]] },
+    '623':  { type: '', locaux: [['IL 06A/20/D0', '2ᵉ', null], ['IL 06A/C0/D0', 'Cave', 0]] },
+  };
+
+  /* ================= Plans (format issu d'un DXF : polygones par lot) ================= */
+  const LEVELS = [];
+  // RDC — tracé d'après l'extrait du géomètre (coordonnées du plan, 1 unité ≈ 2 cm)
+  LEVELS.push({
+    id: 'rdc', name: 'RDC', vb: [20, 0, 1310, 545],
+    texts: [[258, 70, 'COUR'], [665, 58, 'COUR'], [1090, 58, 'COUR']],
+    halls: [
+      { poly: [[210, 150], [295, 150], [295, 520], [210, 520]], label: 'Hall' },
+      { poly: [[616, 115], [708, 115], [708, 305], [696, 305], [696, 520], [632, 520], [632, 305], [616, 305]], label: 'Hall' },
+      { poly: [[1150, 118], [1210, 118], [1210, 520], [1150, 520]], label: 'Hall' },
+    ],
+    lots: [
+      { lot: '1201', poly: [[62, 22], [155, 22], [155, 98], [205, 150], [205, 318], [210, 318], [210, 520], [62, 520]],
+        walls: [[62, 100, 155, 100], [100, 100, 100, 135], [62, 318, 210, 318]], rooms: [[108, 64, 'SdB + Wc'], [140, 200, 'Séjour'], [136, 430, 'Chambre']], tag: [134, 255] },
+      { lot: '1202', poly: [[368, 22], [462, 22], [462, 520], [295, 520], [295, 318], [318, 318], [318, 150], [368, 100]],
+        walls: [[368, 100, 462, 100], [425, 100, 425, 135], [295, 318, 462, 318]], rooms: [[415, 64, 'SdB + Wc'], [395, 200, 'Séjour'], [380, 430, 'Chambre']], tag: [392, 255] },
+      { lot: '1002', poly: [[482, 108], [612, 108], [612, 305], [630, 305], [630, 520], [487, 520], [487, 305], [482, 305]],
+        walls: [[482, 185, 540, 185], [540, 108, 540, 185], [487, 305, 630, 305]], rooms: [[511, 150, 'SdE + Wc'], [576, 140, 'Cuisine'], [546, 220, 'Séjour'], [558, 420, 'Chambre']], tag: [546, 262] },
+      { lot: '1001', poly: [[716, 118], [840, 118], [840, 520], [698, 520], [698, 305], [716, 305]],
+        walls: [[716, 228, 840, 228], [772, 228, 772, 305], [698, 305, 840, 305]], rooms: [[778, 175, 'Cuisine'], [744, 268, 'Entrée'], [806, 268, 'SdE + Wc'], [769, 380, 'Pièce']], tag: [769, 440] },
+      { lot: '800', poly: [[870, 118], [990, 118], [990, 520], [870, 520]], walls: [], rooms: [[930, 230, 'Local commercial']], tag: [930, 300], schema: true },
+      { lot: '801', poly: [[990, 118], [1150, 118], [1150, 520], [990, 520]], walls: [], rooms: [[1070, 230, 'Atelier']], tag: [1070, 300], schema: true },
+      { lot: '102', poly: [[1210, 118], [1310, 118], [1310, 520], [1210, 520]], walls: [], rooms: [[1260, 230, 'Boulangerie']], tag: [1260, 300], extra: '+ cave', schema: true },
+    ],
+  });
+  // 2e étage — schéma provisoire : vrais numéros de lots (pastilles du plan), regroupés par bâtiment
+  (() => {
+    const B = [['1', [121, 122, 123, 161, 171]], ['2', [221, 222, 223, 271]], ['3', [321, 322, 323, 324]], ['4', [421, 422, 423]], ['5', [521]],
+               ['6', [621, 622, 623]], ['7', [700]], ['8', [821, 822, 823]], ['9', [921, 922]], ['10', [1021]], ['12', [1222, 1223]]];
+    const W = 104, H = 150, C = 44, G = 34, lots = [], halls = [], texts = [];
+    let x = 30, y = 40;
+    B.forEach(([bat, ns], i) => {
+      if (i === 5) { x = 30; y += 2 * H + C + 70; }
+      const top = Math.ceil(ns.length / 2), bw = top * W;
+      texts.push([x + bw / 2, y - 12, `BÂT. ${bat}`]);
+      halls.push({ poly: [[x, y + H], [x + bw, y + H], [x + bw, y + H + C], [x, y + H + C]], label: 'Palier' });
+      ns.forEach((n, k) => {
+        const row = k < top ? 0 : 1, col = row ? k - top : k;
+        const lx = x + col * W, ly = row ? y + H + C : y, w = row && ns.length - top === 1 && top === 2 ? bw : W;
+        lots.push({ lot: String(n), poly: [[lx, ly], [lx + w, ly], [lx + w, ly + H], [lx, ly + H]], walls: [], rooms: [], tag: [lx + w / 2, ly + H / 2 + 4], schema: true });
+      });
+      x += bw + G;
+    });
+    LEVELS.push({ id: 'n2', name: '2ᵉ étage', vb: [0, 0, 1240, 2 * (2 * H + C) + 130], texts, halls, lots });
+  })();
+
+  const LOTS = [];
+  LEVELS.forEach(L => L.lots.forEach(g => {
+    const ref = REF[g.lot] || { type: '', locaux: [] };
+    const surf = ref.locaux.reduce((t, l) => t + (l[2] || 0), 0);
+    LOTS.push({ id: g.lot, level: L, geo: g, type: ref.type, locaux: ref.locaux, surf: ref.locaux.length && surf ? surf : null,
+      niveaux: ref.locaux.length ? [...new Set(ref.locaux.map(l => l[1]))].join(', ') : L.name });
+  }));
+  const byId = Object.fromEntries(LOTS.map(l => [l.id, l]));
+
+  /* ================= Vocabulaire ================= */
+  const OCC = { nr: 'Non renseigné', loue: 'Loué', preavis: 'Préavis reçu', vacant: 'Vacant' };
+  const OCCV = { nr: 'var(--st-nr)', loue: 'var(--st-loue)', preavis: 'var(--st-preavis)', vacant: 'var(--st-vacant)' };
+  const DPEV = { A: 'var(--dpe-a)', B: 'var(--dpe-b)', C: 'var(--dpe-c)', D: 'var(--dpe-d)', E: 'var(--dpe-e)', F: 'var(--dpe-f)', G: 'var(--dpe-g)' };
+  const isLogement = l => /^T\d/.test(l.type);
+  function alerts(l, s) {
+    const a = [];
+    if (!isLogement(l)) return a;
+    if (!s.dpe) a.push(['bad', 'DPE non renseigné : obligatoire pour louer.']);
+    if (s.dpe === 'G') a.push(['bad', 'Classe G : logement non décent depuis le 1ᵉʳ janvier 2025, location impossible en l’état.']);
+    if (s.dpe === 'F') a.push(['warn', 'Classe F : interdit à la location au 1ᵉʳ janvier 2028.']);
+    if (s.dpe && s.dpeDate && s.dpeDate < '2021-07-01') a.push(['bad', 'DPE réalisé avant juillet 2021 : plus valable, à refaire.']);
+    return a;
+  }
+
+  /* ================= État ================= */
+  const EMPTY = { occ: 'nr', travaux: false, fin: '', dpe: '', dpeDate: '' };
+  const S = {
+    track: {}, shared: [], internal: [], journal: [],
+    level: LEVELS[0], layer: 'occupation', sym: { travaux: true, comments: true, alertes: true },
+    focus: 'all', sel: byId['1201'], sort: ['id', 1],
+    mode: 'connecting', canWrite: true, canInternal: true, me: null, names: {},
+  };
+  const T = id => ({ ...EMPTY, ...(S.track[id] || {}) });
+  const cmtsOf = id => S.shared.filter(c => c.lot === id).map(c => ({ ...c, vis: 'sh' }))
+    .concat(S.internal.filter(c => c.lot === id).map(c => ({ ...c, vis: 'int' })))
+    .sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+  const who = c => (c.by && S.names[c.by]) || c.auteur || 'Quelqu’un';
+
+  /* ================= Plan ================= */
+  const svg = $('#plan');
+  function drawLevel() {
+    const L = S.level;
+    svg.innerHTML = '';
+    svg.setAttribute('viewBox', L.vb.join(' '));
+    svg.setAttribute('aria-label', 'Plan · ' + L.name);
+    const defs = el('defs', {}, svg);
+    const p1 = el('pattern', { id: 'hatch', width: 12, height: 12, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+    el('rect', { width: 4, height: 12, fill: 'var(--signal)', opacity: .8 }, p1);
+    L.texts.forEach(([x, y, t]) => { const e = el('text', { x, y, 'text-anchor': 'middle', 'font-family': 'var(--f-mono)', 'font-size': 13, 'letter-spacing': 3, fill: 'var(--muted)' }, svg); e.textContent = t; });
+    L.halls.forEach(h => {
+      el('polygon', { points: h.poly.join(' '), fill: 'var(--hall)', stroke: 'var(--wall)', 'stroke-width': 1.5 }, svg);
+      const xs = h.poly.map(p => p[0]), ys = h.poly.map(p => p[1]);
+      const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+      const t = el('text', { x: cx, y: cy + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-family': 'var(--f-body)', fill: 'var(--muted)' }, svg); t.textContent = h.label;
+    });
+    L.lots.forEach(g => {
+      const l = byId[g.lot];
+      const G = el('g', { class: 'lot', tabindex: 0, role: 'button', 'aria-label': 'Lot ' + g.lot, 'data-lot': g.lot }, svg);
+      const pts = g.poly.join(' ');
+      l.base = el('polygon', { class: 'base', points: pts }, G);
+      l.hatch = el('polygon', { points: pts, fill: 'url(#hatch)', 'pointer-events': 'none' }, G);
+      g.walls.forEach(w => el('line', { x1: w[0], y1: w[1], x2: w[2], y2: w[3], stroke: 'var(--wall)', 'stroke-width': 1.3, 'pointer-events': 'none' }, G));
+      g.rooms.forEach(([x, y, n]) => { const t = el('text', { x, y, 'text-anchor': 'middle', 'font-size': 12, 'font-style': 'italic', 'font-family': 'var(--f-body)', fill: 'var(--muted)', 'pointer-events': 'none' }, G); t.textContent = n; });
+      el('polygon', { class: 'sel', points: pts }, G);
+      const [tx, ty] = g.tag;
+      const r = g.lot.length > 3 ? 27 : 23;
+      el('circle', { cx: tx, cy: ty, r, fill: 'var(--sheet)', stroke: 'var(--wall)', 'stroke-width': 1.3, 'pointer-events': 'none' }, G);
+      const lt = el('text', { x: tx, y: ty + 6, 'text-anchor': 'middle', 'font-family': 'var(--f-body)', 'font-size': 17, 'font-weight': 600, fill: 'var(--ink)', 'pointer-events': 'none' }, G); lt.textContent = g.lot;
+      if (g.extra) { const e = el('text', { x: tx, y: ty + r + 18, 'text-anchor': 'middle', 'font-family': 'var(--f-mono)', 'font-size': 11, fill: 'var(--muted)', 'pointer-events': 'none' }, G); e.textContent = g.extra; }
+      l.bub = el('g', { transform: `translate(${tx + r + 20} ${ty - r + 2})`, 'pointer-events': 'none' }, G);
+      el('path', { d: 'M-13 -11 h26 a4 4 0 0 1 4 4 v12 a4 4 0 0 1 -4 4 h-15 l-6 6 v-6 h-5 a4 4 0 0 1 -4 -4 v-12 a4 4 0 0 1 4 -4z', fill: 'var(--accent)' }, l.bub);
+      l.bubT = el('text', { y: 4.5, 'text-anchor': 'middle', 'font-family': 'var(--f-mono)', 'font-size': 12, 'font-weight': 500, fill: 'var(--accent-ink)' }, l.bub);
+      l.alr = el('g', { transform: `translate(${tx - r - 18} ${ty - r + 4})`, 'pointer-events': 'none' }, G);
+      el('path', { d: 'M0 -13 L13 10 L-13 10 Z', fill: 'var(--bad)', stroke: 'var(--sheet)', 'stroke-width': 1.5 }, l.alr);
+      const at = el('text', { y: 7, 'text-anchor': 'middle', 'font-family': 'var(--f-display)', 'font-size': 13, 'font-weight': 800, fill: '#fff' }, l.alr); at.textContent = '!';
+      G.addEventListener('click', () => select(l));
+      G.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(l); } });
+    });
+    $$('#levels button').forEach(b => b.setAttribute('aria-pressed', b.dataset.level === L.id));
+  }
+  const matchesFocus = (l, s) => {
+    switch (S.focus) {
+      case 'loue': case 'vacant': case 'preavis': case 'nr': return s.occ === S.focus;
+      case 'travaux': return s.travaux;
+      case 'alertes': return alerts(l, s).length > 0;
+      case 'cmts': return cmtsOf(l.id).length > 0;
+      default: return true;
+    }
+  };
+  function paintPlan() {
+    S.level.lots.forEach(g => {
+      const l = byId[g.lot], s = T(l.id);
+      let f = 'var(--st-nr)';
+      if (S.layer === 'occupation') f = OCCV[s.occ] || f;
+      if (S.layer === 'dpe') f = DPEV[s.dpe] || 'var(--dpe-none)';
+      l.base.setAttribute('fill', f);
+      l.hatch.style.display = S.sym.travaux && s.travaux ? '' : 'none';
+      const n = cmtsOf(l.id).length;
+      l.bub.style.display = S.sym.comments && n ? '' : 'none'; l.bubT.textContent = n;
+      l.alr.style.display = S.sym.alertes && alerts(l, s).length ? '' : 'none';
+      const G = l.base.parentNode;
+      G.classList.toggle('is-sel', S.sel === l);
+      G.classList.toggle('dim', !matchesFocus(l, s));
+    });
+    const Lg = $('#legend');
+    let h = '';
+    if (S.layer === 'occupation') h = Object.entries(OCC).map(([k, v]) => `<span><span class="sw" style="background:${OCCV[k]}"></span> ${v}</span>`).join('');
+    else if (S.layer === 'dpe') h = Object.entries(DPEV).map(([k, v]) => `<span><span class="sw" style="background:${v}"></span> ${k}</span>`).join('') + '<span><span class="sw" style="background:var(--dpe-none)"></span> Non renseigné</span>';
+    else h = '<span>Plan seul</span>';
+    const schema = S.level.lots.some(g => g.schema);
+    Lg.innerHTML = h + (schema ? `<span class="note">${S.level.id === 'rdc' ? '800, 801, 102 : schéma provisoire' : 'Schéma provisoire en attendant le DWG'}</span>` : '');
+  }
+
+  /* ================= Résumé ================= */
+  function renderSummary() {
+    const c = { all: LOTS.length, loue: 0, preavis: 0, vacant: 0, nr: 0, travaux: 0, alertes: 0, cmts: 0 };
+    LOTS.forEach(l => { const s = T(l.id); c[s.occ]++; if (s.travaux) c.travaux++; if (alerts(l, s).length) c.alertes++; if (cmtsOf(l.id).length) c.cmts++; });
+    const items = [['all', 'Tous les lots', ''], ['loue', 'Loués', OCCV.loue], ['vacant', 'Vacants', OCCV.vacant], ['preavis', 'Préavis reçus', OCCV.preavis],
+      ['travaux', 'En travaux', 'url(#)'], ['alertes', 'Alertes DPE', ''], ['cmts', 'Avec commentaires', ''], ['nr', 'Non renseignés', OCCV.nr]];
+    $('#summary').innerHTML = items.map(([k, lab, col]) => `<button type="button" class="stat" data-focus="${k}" aria-pressed="${S.focus === k}">
+      <span class="n">${c[k]}</span><span class="l">${k === 'travaux' ? '<span class="sw" style="background:repeating-linear-gradient(45deg,var(--signal) 0 3px,transparent 3px 7px)"></span>' : col ? `<span class="sw" style="background:${col}"></span>` : ''}${lab}</span></button>`).join('');
+    $$('#summary .stat').forEach(b => b.addEventListener('click', () => { S.focus = S.focus === b.dataset.focus ? 'all' : b.dataset.focus; renderAll(); }));
+  }
+
+  /* ================= Fiche ================= */
+  const fiche = $('#fiche');
+  let draft = '';
+  function renderFiche() {
+    const l = S.sel;
+    if (!l) { fiche.innerHTML = '<p class="empty">Cliquez sur un lot du plan ou une ligne du tableau pour ouvrir sa fiche.</p>'; return; }
+    const s = T(l.id), ro = !S.canWrite, dis = ro ? 'disabled' : '';
+    const cm = cmtsOf(l.id), al = alerts(l, s);
+    const tr = S.track[l.id];
+    fiche.innerHTML = `
+      <div class="fhead"><h2>Lot ${l.id}</h2><span class="mono muted" style="font-size:.82rem">${esc(l.type || 'type ?')}${l.surf ? ' · ' + m2(l.surf) + ' m²' : ''}</span></div>
+      ${l.locaux.length ? `<dl class="kv">${l.locaux.map(x => `<dt>${x[1]}</dt><dd class="mono">${x[0]}${x[2] != null ? ' · ' + m2(x[2]) + ' m²' : ''}</dd>`).join('')}</dl>`
+        : `<p class="muted" style="font-size:.84rem;margin:0">${l.level.name}. Identifiants et surfaces viendront de l’import de 30_LOCAUX.</p>`}
+      ${al.map(([k, t]) => `<div class="alert ${k}">${t}</div>`).join('')}
+      <label class="field"><span>Occupation</span>
+        <select id="f-occ" ${dis}>${Object.entries(OCC).map(([k, v]) => `<option value="${k}" ${k === s.occ ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      <div class="field"><span>Travaux</span>
+        <div class="row"><label class="chk"><input type="checkbox" id="f-trv" ${s.travaux ? 'checked' : ''} ${dis}> En cours</label>
+        <input type="text" id="f-fin" placeholder="fin prévue" value="${esc(s.fin)}" ${ro || !s.travaux ? 'disabled' : ''} style="flex:1;min-width:120px" aria-label="Fin prévue des travaux"></div></div>
+      <div class="field"><span>DPE</span>
+        <div class="row"><select id="f-dpe" ${dis} aria-label="Classe DPE"><option value="">Non renseigné</option>${'ABCDEFG'.split('').map(k => `<option ${k === s.dpe ? 'selected' : ''}>${k}</option>`).join('')}</select>
+        <input type="date" id="f-dpd" value="${esc(s.dpeDate)}" ${dis} aria-label="Date du diagnostic"></div></div>
+      ${tr && tr.maj ? `<p class="mono muted" style="font-size:.72rem;margin:0">Mis à jour le ${fmtStamp(tr.maj)}${tr.majBy && S.names[tr.majBy] ? ' par ' + esc(S.names[tr.majBy]) : ''}</p>` : ''}
+      <div class="field"><span>Commentaires (${cm.length})</span>
+        <div class="cmts">${cm.length ? cm.map(c => `<div class="cmt"><div class="meta"><span>${esc(who(c))} · ${fmtStamp(c.at)}</span><span class="pill ${c.vis}">${c.vis === 'int' ? 'Interne' : 'Partagé'}</span></div>${esc(c.txt)}</div>`).join('') : '<span class="empty" style="font-size:.84rem">Aucun commentaire.</span>'}</div>
+        ${ro ? '<div class="ro">Accès en lecture : vous voyez l’état des lots et les commentaires partagés.</div>' : `
+        <textarea id="f-txt" placeholder="Ajouter un commentaire sur le lot ${l.id}…" aria-label="Nouveau commentaire">${esc(draft)}</textarea>
+        <div class="row" style="justify-content:space-between">
+          <select id="f-vis" aria-label="Visibilité">${S.canInternal ? '<option value="int">Interne (équipe)</option>' : ''}<option value="sh">Partagé avec les organismes</option></select>
+          <button type="button" class="btn" id="f-add">Ajouter</button></div>`}
+      </div>`;
+    if (ro) return;
+    const cur = () => ({ ...T(l.id) });
+    $('#f-occ').addEventListener('change', e => saveLot(l, { ...cur(), occ: e.target.value }, `Occupation : ${OCC[s.occ]} → ${OCC[e.target.value]}`));
+    $('#f-trv').addEventListener('change', e => saveLot(l, { ...cur(), travaux: e.target.checked, fin: e.target.checked ? cur().fin : '' }, `Travaux : ${e.target.checked ? 'en cours' : 'terminés'}`));
+    $('#f-fin').addEventListener('change', e => saveLot(l, { ...cur(), fin: e.target.value.trim() }, `Fin des travaux : ${e.target.value.trim() || '—'}`));
+    $('#f-dpe').addEventListener('change', e => saveLot(l, { ...cur(), dpe: e.target.value }, `DPE : ${s.dpe || '—'} → ${e.target.value || '—'}`));
+    $('#f-dpd').addEventListener('change', e => saveLot(l, { ...cur(), dpeDate: e.target.value }, `Date DPE : ${fmtDate(e.target.value) || '—'}`));
+    $('#f-txt').addEventListener('input', e => draft = e.target.value);
+    $('#f-add').addEventListener('click', () => addComment(l, $('#f-txt').value.trim(), $('#f-vis').value));
+  }
+
+  /* ================= Tableau & journal ================= */
+  const COLS = [['id', 'Lot'], ['niveaux', 'Niveaux'], ['type', 'Type'], ['surf', 'm²'], ['occ', 'Occupation'], ['travaux', 'Travaux'], ['dpe', 'DPE'], ['dpeDate', 'Date DPE'], ['al', 'Alertes'], ['cm', 'Comm.'], ['maj', 'Mis à jour']];
+  function rowVal(l, k) {
+    const s = T(l.id);
+    switch (k) {
+      case 'id': return +l.id; case 'surf': return l.surf ?? -1; case 'occ': return OCC[s.occ]; case 'travaux': return s.travaux ? 1 : 0;
+      case 'dpe': return s.dpe || 'Z'; case 'dpeDate': return s.dpeDate || ''; case 'al': return alerts(l, s).length; case 'cm': return cmtsOf(l.id).length;
+      case 'maj': return (S.track[l.id] || {}).maj || ''; default: return l[k] || '';
+    }
+  }
+  function renderTable() {
+    $('#thead').innerHTML = COLS.map(([k, n]) => `<th aria-sort="${S.sort[0] === k ? (S.sort[1] > 0 ? 'ascending' : 'descending') : 'none'}"><button type="button" data-sort="${k}">${n}${S.sort[0] === k ? (S.sort[1] > 0 ? ' ↑' : ' ↓') : ''}</button></th>`).join('');
+    $$('#thead [data-sort]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.sort; S.sort = [k, S.sort[0] === k ? -S.sort[1] : 1]; renderTable(); }));
+    const rows = LOTS.filter(l => matchesFocus(l, T(l.id))).sort((a, b) => { const x = rowVal(a, S.sort[0]), y = rowVal(b, S.sort[0]); return (x > y ? 1 : x < y ? -1 : 0) * S.sort[1]; });
+    $('#count').textContent = `${rows.length} lot${rows.length > 1 ? 's' : ''}${S.focus !== 'all' ? ' (filtre actif)' : ''}`;
+    $('#tbody').innerHTML = rows.map(l => {
+      const s = T(l.id), a = alerts(l, s).length, n = cmtsOf(l.id).length, tr = S.track[l.id];
+      return `<tr data-lot="${l.id}" class="${S.sel === l ? 'is-sel' : ''}">
+        <td class="mono"><b>${l.id}</b></td><td>${esc(l.niveaux)}</td><td>${esc(l.type) || '<span class="muted">—</span>'}</td><td class="mono num">${m2(l.surf) || '<span class="muted">—</span>'}</td>
+        <td><span class="dot" style="background:${OCCV[s.occ]}"></span>${OCC[s.occ]}</td>
+        <td>${s.travaux ? 'Oui' + (s.fin ? ' · ' + esc(s.fin) : '') : '<span class="muted">—</span>'}</td>
+        <td>${s.dpe ? `<span class="dpe ${s.dpe === 'G' ? 'g' : ''}" style="background:${DPEV[s.dpe]}">${s.dpe}</span>` : '<span class="muted">—</span>'}</td>
+        <td class="mono">${fmtDate(s.dpeDate) || '<span class="muted">—</span>'}</td>
+        <td>${a ? `<span class="al">▲ ${a}</span>` : '<span class="muted">—</span>'}</td>
+        <td class="mono">${n || '<span class="muted">—</span>'}</td><td class="mono">${tr && tr.maj ? fmtStamp(tr.maj).slice(0, 10) : '<span class="muted">—</span>'}</td></tr>`;
+    }).join('') || `<tr><td colspan="${COLS.length}" class="muted">Aucun lot ne correspond au filtre.</td></tr>`;
+    $$('#tbody tr[data-lot]').forEach(tr => tr.addEventListener('click', () => select(byId[tr.dataset.lot], true)));
+  }
+  function renderJournal() {
+    const j = $('#journal');
+    $('#tab-journal-btn').hidden = !S.canInternal;
+    j.innerHTML = S.journal.length ? S.journal.map(e => `<li><span class="mono muted">${fmtStamp(e.at)}</span><span><b>${esc(who(e))}</b> · Lot ${esc(e.lot)} · ${esc(e.txt)}</span></li>`).join('')
+      : '<li class="muted">Aucune modification enregistrée pour l’instant.</li>';
+  }
+
+  function renderAll() { paintPlan(); renderSummary(); renderFiche(); renderTable(); renderJournal(); }
+  function select(l, fromTable) {
+    if (!l) return;
+    if (S.sel !== l) draft = '';
+    S.sel = l;
+    if (l.level !== S.level) { S.level = l.level; drawLevel(); }
+    renderAll();
+    if (fromTable && innerWidth < 1000) fiche.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ================= Écritures ================= */
+  let db = null, user = null, downloads = null, offline = false;
+  const setSync = (s, txt) => { const e = $('#sync'); e.dataset.s = s; e.textContent = txt; };
+  const syncIdle = () => offline ? setSync('', 'Démo locale') : S.canWrite ? setSync('ok', 'En ligne · synchronisé') : setSync('ro', 'En ligne · lecture seule');
+  const writing = {};
+  async function saveLot(l, next, label) {
+    const body = { occ: next.occ, travaux: !!next.travaux, fin: next.fin || '', dpe: next.dpe || '', dpeDate: next.dpeDate || '', maj: new Date().toISOString(), majBy: S.me || null };
+    S.track[l.id] = body;
+    renderAll();
+    if (offline) { S.journal.unshift({ lot: l.id, txt: label, at: body.maj, auteur: 'Vous' }); renderJournal(); return; }
+    // une écriture à la fois par lot : on attend la précédente
+    const prev = writing[l.id] || Promise.resolve();
+    const run = prev.then(async () => {
+      setSync('busy', 'Enregistrement…');
+      try {
+        await db.doc('lots/' + l.id).set(body);
+        await db.collection('journal').add({ lot: l.id, txt: label, at: body.maj, by: S.me || null });
+        syncIdle();
+      } catch (e) { onWriteError(e); }
+    });
+    writing[l.id] = run.catch(() => {});
+  }
+  async function addComment(l, txt, vis) {
+    if (!txt) { $('#f-txt')?.focus(); return; }
+    const c = { lot: l.id, txt, at: new Date().toISOString(), by: S.me || null };
+    draft = '';
+    if (offline) { (vis === 'int' ? S.internal : S.shared).push({ ...c, auteur: 'Vous' }); S.journal.unshift({ lot: l.id, txt: `Commentaire ${vis === 'int' ? 'interne' : 'partagé'} ajouté`, at: c.at, auteur: 'Vous' }); renderAll(); return; }
+    setSync('busy', 'Enregistrement…');
+    try {
+      await db.collection(vis === 'int' ? 'interne' : 'partages').add(c);
+      await db.collection('journal').add({ lot: l.id, txt: `Commentaire ${vis === 'int' ? 'interne' : 'partagé'} ajouté`, at: c.at, by: S.me || null });
+      syncIdle();
+    } catch (e) { draft = txt; onWriteError(e); renderFiche(); }
+  }
+  function onWriteError(e) {
+    const code = e && e.code;
+    if (code === 'invalid_argument') { S.canWrite = false; S.canInternal = false; toast('Votre accès est en lecture seule : la modification n’a pas été enregistrée.'); renderAll(); syncIdle(); return; }
+    if (code === 'quota_exceeded') { setSync('err', 'Base pleine'); toast('La base de la démo est pleine : la modification n’a pas été enregistrée.'); return; }
+    setSync('err', 'Non enregistré'); toast('La modification n’a pas pu être enregistrée. Vérifiez la connexion puis réessayez.');
+  }
+
+  /* ================= Export Excel ================= */
+  function buildWorkbook() {
+    const lotsRows = LOTS.slice().sort((a, b) => a.id - b.id).map(l => {
+      const s = T(l.id), tr = S.track[l.id] || {};
+      return { 'N° lot': +l.id, 'Locaux (identifiants)': l.locaux.map(x => x[0]).join(' | '), 'Niveaux': l.niveaux, 'Type': l.type, 'Surface m²': l.surf ?? '',
+        'Occupation': OCC[s.occ], 'Travaux': s.travaux ? 'Oui' : 'Non', 'Fin travaux prévue': s.fin, 'DPE': s.dpe, 'Date DPE': s.dpeDate ? new Date(s.dpeDate + 'T00:00:00') : '',
+        'Alertes': alerts(l, s).map(a => a[1]).join(' / '), 'Nb commentaires': cmtsOf(l.id).length, 'Mis à jour': tr.maj ? new Date(tr.maj) : '' };
+    });
+    const locRows = [];
+    LOTS.forEach(l => l.locaux.forEach(x => locRows.push({ 'Identifiant': x[0], 'N° lot': +l.id, 'Niveau': x[1], 'Surface m²': x[2] ?? '' })));
+    const cmRows = LOTS.flatMap(l => cmtsOf(l.id).map(c => ({ 'N° lot': +l.id, 'Date': c.at ? new Date(c.at) : '', 'Auteur': who(c), 'Visibilité': c.vis === 'int' ? 'Interne' : 'Partagé', 'Commentaire': c.txt })));
+    const wb = XLSX.utils.book_new();
+    const add = (rows, name, widths) => { const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true, dateNF: 'dd/mm/yyyy' }); ws['!cols'] = widths.map(w => ({ wch: w })); if (rows.length) ws['!autofilter'] = { ref: ws['!ref'] }; XLSX.utils.book_append_sheet(wb, ws, name); };
+    add(lotsRows, 'LOTS', [8, 34, 14, 10, 10, 14, 8, 18, 5, 11, 60, 10, 16]);
+    add(locRows, 'LOCAUX', [16, 8, 8, 10]);
+    add(cmRows, 'COMMENTAIRES', [8, 16, 18, 10, 80]);
+    if (S.canInternal) add(S.journal.map(e => ({ 'Date': e.at ? new Date(e.at) : '', 'Auteur': who(e), 'N° lot': +e.lot, 'Modification': e.txt })), 'JOURNAL', [16, 18, 8, 60]);
+    return wb;
+  }
+  $('#export').addEventListener('click', async () => {
+    if (!window.XLSX) { toast('Le module Excel n’a pas pu se charger. Rechargez la page.'); return; }
+    const d = new Date(), name = `Plan-Vivant_Tocqueville_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.xlsx`;
+    const buf = XLSX.write(buildWorkbook(), { bookType: 'xlsx', type: 'array', cellDates: true });
+    if (downloads) {
+      try { await downloads.save({ filename: name, data: new Uint8Array(buf) }); toast('Fichier Excel enregistré.'); }
+      catch (e) { if (e && e.code === 'declined') return; if (e && e.code === 'rate_limited') toast('Une demande d’enregistrement est déjà ouverte.'); else toast('L’enregistrement du fichier n’est pas disponible ici.'); }
+    } else if (!window.claude) {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } else toast('L’enregistrement du fichier n’est pas disponible dans cette vue.');
+  });
+
+  /* ================= Contrôles ================= */
+  $('#levels').innerHTML = LEVELS.map(L => `<button type="button" data-level="${L.id}">${L.name}</button>`).join('');
+  $$('#levels button').forEach(b => b.addEventListener('click', () => { S.level = LEVELS.find(L => L.id === b.dataset.level); drawLevel(); paintPlan(); }));
+  $$('[data-layer]').forEach(b => b.addEventListener('click', () => { S.layer = b.dataset.layer; $$('[data-layer]').forEach(o => o.setAttribute('aria-pressed', o === b)); paintPlan(); }));
+  [['s-travaux', 'travaux'], ['s-comments', 'comments'], ['s-alertes', 'alertes']].forEach(([id, k]) => $('#' + id).addEventListener('change', e => { S.sym[k] = e.target.checked; paintPlan(); }));
+  $('#searchform').addEventListener('submit', e => {
+    e.preventDefault();
+    const q = $('#q').value.trim();
+    const l = byId[q] || LOTS.find(x => x.locaux.some(y => y[0].replace(/\s/g, '').toLowerCase().includes(q.replace(/\s/g, '').toLowerCase())) && q.length > 2);
+    if (l) { select(l); $('#q').value = ''; } else toast(`Aucun lot « ${q} » sur les plans chargés.`);
+  });
+  $$('[role="tab"]').forEach(b => b.addEventListener('click', () => {
+    $$('[role="tab"]').forEach(o => o.setAttribute('aria-selected', o === b));
+    $('#tab-table').hidden = b.dataset.tab !== 'table'; $('#tab-journal').hidden = b.dataset.tab !== 'journal';
+  }));
+
+  drawLevel();
+  renderAll();
+
+  /* ================= Démarrage : base en ligne ou démo locale ================= */
+  function startOffline(reason) {
+    offline = true; S.mode = 'offline'; S.canWrite = true; S.canInternal = true;
+    // exemples pour la démo locale uniquement (la version en ligne lit la base partagée)
+    const t = new Date().toISOString();
+    Object.assign(S.track, {
+      '1201': { occ: 'vacant', travaux: false, fin: '', dpe: 'G', dpeDate: '2022-03-14' },
+      '1202': { occ: 'loue', travaux: false, fin: '', dpe: 'E', dpeDate: '2023-05-10' },
+      '1002': { occ: 'vacant', travaux: true, fin: 'fin novembre 2026', dpe: '', dpeDate: '' },
+      '1001': { occ: 'loue', travaux: false, fin: '', dpe: 'D', dpeDate: '2019-11-20' },
+      '800': { occ: 'preavis', travaux: false, fin: '', dpe: '', dpeDate: '' },
+      '801': { occ: 'vacant', travaux: false, fin: '', dpe: '', dpeDate: '' },
+      '102': { occ: 'loue', travaux: false, fin: '', dpe: '', dpeDate: '' },
+    });
+    S.shared.push({ lot: '1002', txt: 'Réfection de la salle d’eau en cours. Carrelage repris la semaine prochaine.', at: t, auteur: 'Gestion (exemple)' });
+    S.internal.push({ lot: '1201', txt: 'Projet de réunion avec le 1202, plans architecte attendus.', at: t, auteur: 'Gestion (exemple)' });
+    const b = $('#banner'); b.hidden = false;
+    b.textContent = reason + ' Les modifications restent dans cet onglet et disparaissent au rechargement.';
+    syncIdle(); renderAll();
+  }
+  if (!window.claude || !window.claude.use) { startOffline('Démo locale avec des exemples.'); return; }
+
+  Promise.all([claude.use('db'), claude.use('user'), claude.use('downloads')]).then(async ([d, u, dl]) => {
+    downloads = dl;
+    if (!dl) $('#export').title = 'Export indisponible dans cette vue';
+    if (!d) { startOffline('Base partagée indisponible dans cette vue (connectez-vous à claude.ai pour la version partagée).'); return; }
+    db = d; user = u;
+    if (user) {
+      S.me = await user.id();
+      const w = await user.can('data.write');
+      if (w === false) { S.canWrite = false; S.canInternal = false; }
+    }
+    syncIdle();
+    const fail = e => { if (e && e.code === 'revoked') { S.canWrite = false; setSync('err', 'Accès retiré'); renderAll(); } };
+    const resolveNames = async () => {
+      if (!user) return;
+      const ids = [...new Set([...S.shared, ...S.internal, ...S.journal].map(c => c.by).concat(Object.values(S.track).map(t => t.majBy)).filter(Boolean))];
+      if (!ids.length) return;
+      const ps = await user.profiles(ids);
+      let changed = false;
+      ids.forEach(id => { const n = (ps[id] && ps[id].name) || ''; if (n && S.names[id] !== n) { S.names[id] = n; changed = true; } });
+      if (changed) renderAll();
+    };
+    let pending = false;
+    const refresh = () => { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; renderAll(); resolveNames(); }); };
+    db.collection('lots').onSnapshot(snap => { const t = {}; snap.docs.forEach(x => t[x.id] = x.data()); S.track = t; refresh(); }, fail);
+    db.collection('partages').orderBy('at').limit(1000).onSnapshot(snap => { S.shared = snap.docs.map(x => x.data()); refresh(); }, fail);
+    db.collection('interne').orderBy('at').limit(1000).onSnapshot(snap => { S.internal = snap.docs.map(x => x.data()); refresh(); }, fail);
+    db.collection('journal').orderBy('at', 'desc').limit(300).onSnapshot(snap => { S.journal = snap.docs.map(x => x.data()); refresh(); }, fail);
+  });
+})();
+</script>
