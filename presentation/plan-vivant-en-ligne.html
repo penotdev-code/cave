@@ -1,0 +1,767 @@
+<title>Plan Vivant en ligne</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout : des « calques » empilés comme dans AutoCAD — chaque section est une feuille posée sur la précédente ; cartouche à gauche, contenu à droite, la maquette prend toute la largeur. */
+:root{
+  --bg:#EDF0F3; --sheet:#FFFFFF; --ink:#142030; --muted:#566373; --rule:#D0D7DF; --rule-strong:#9AA6B3;
+  --accent:#1F4FD1; --accent-soft:#E3E9FB; --accent-ink:#FFFFFF;
+  --signal:#D25A1C; /* chantier */
+  --ok:#1E7A55; --warn:#A86A00; --bad:#C0261F;
+  --st-loue:#BFE3D1; --st-vacant:#F3F5F7; --st-preavis:#F7D98C; --st-none:#FFFFFF;
+  --dpe-a:#009C6D; --dpe-b:#52B153; --dpe-c:#A5CC74; --dpe-d:#F4E70F; --dpe-e:#F0B50F; --dpe-f:#EB8235; --dpe-g:#D7221F; --dpe-none:#DCE1E6;
+  --wall:#142030; --hall:#E4E8EC;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --s--1:clamp(.78rem,.76rem + .12vw,.86rem);
+  --s-0:clamp(.95rem,.92rem + .2vw,1.05rem);
+  --s-1:clamp(1.12rem,1.04rem + .45vw,1.35rem);
+  --s-2:clamp(1.45rem,1.2rem + 1.1vw,2.1rem);
+  --s-3:clamp(2.1rem,1.5rem + 2.8vw,3.8rem);
+  --radius:6px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E141B; --sheet:#16202A; --ink:#E3E8EE; --muted:#96A2AF; --rule:#2A3541; --rule-strong:#4A5767;
+  --accent:#86A2FF; --accent-soft:#1D2947; --accent-ink:#0E141B; --signal:#FF8E52;
+  --ok:#5CCB9B; --warn:#F2B84B; --bad:#FF7B72;
+  --st-loue:#285E49; --st-vacant:#202B36; --st-preavis:#77612A; --st-none:#16202A;
+  --dpe-none:#2E3945; --wall:#C9D2DC; --hall:#1B2530; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E141B; --sheet:#16202A; --ink:#E3E8EE; --muted:#96A2AF; --rule:#2A3541; --rule-strong:#4A5767;
+  --accent:#86A2FF; --accent-soft:#1D2947; --accent-ink:#0E141B; --signal:#FF8E52;
+  --ok:#5CCB9B; --warn:#F2B84B; --bad:#FF7B72;
+  --st-loue:#285E49; --st-vacant:#202B36; --st-preavis:#77612A; --st-none:#16202A;
+  --dpe-none:#2E3945; --wall:#C9D2DC; --hall:#1B2530; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:var(--s-0); line-height:1.55; padding-inline:16px; padding-block:0 64px}
+.wrap{max-width:1180px; margin-inline:auto}
+h1,h2,h3{font-family:var(--f-display); text-wrap:balance; line-height:1.08; margin:0}
+h1{font-size:var(--s-3); font-weight:800; font-stretch:88%; letter-spacing:-.01em}
+h2{font-size:var(--s-2); font-weight:750; font-stretch:92%}
+h3{font-size:var(--s-1); font-weight:650; font-stretch:100%}
+p{margin:0; max-width:66ch}
+.mono{font-family:var(--f-mono); font-size:.88em; font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono); font-size:var(--s--1); letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* sheets */
+.sheet{background:var(--sheet); border:1px solid var(--rule); border-radius:var(--radius); margin-top:20px; display:grid; grid-template-columns:200px minmax(0,1fr)}
+.cart{border-right:1px solid var(--rule); padding:22px 18px; display:flex; flex-direction:column; gap:6px}
+.cart .num{font-family:var(--f-display); font-weight:800; font-size:var(--s-2); font-stretch:75%; color:var(--accent); line-height:1}
+.body{padding:28px clamp(18px,3vw,40px); display:flex; flex-direction:column; gap:22px; min-width:0}
+@media (max-width:820px){ .sheet{grid-template-columns:minmax(0,1fr)} .cart{border-right:0; border-bottom:1px solid var(--rule); flex-direction:row; align-items:baseline; gap:12px; padding:14px 18px} }
+
+/* hero */
+.hero{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:28px; align-items:center; padding-block:40px 8px}
+.hero p.lead{font-size:var(--s-1); line-height:1.45; margin-top:16px; color:var(--ink)}
+.hero .tags{display:flex; flex-wrap:wrap; gap:8px; margin-top:20px}
+.tag{font-family:var(--f-mono); font-size:var(--s--1); border:1px solid var(--rule-strong); border-radius:99px; padding:3px 10px; color:var(--muted); background:var(--sheet)}
+.stack svg{width:100%; height:auto; display:block}
+@media (max-width:820px){ .hero{grid-template-columns:minmax(0,1fr)} }
+
+/* grids */
+.cols{display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.cols > *{min-width:0}
+.card{border:1px solid var(--rule); border-radius:var(--radius); padding:16px 18px; display:flex; flex-direction:column; gap:8px}
+.card p{font-size:.95em}
+
+/* compare table */
+.tbl{overflow-x:auto; border:1px solid var(--rule); border-radius:var(--radius)}
+table{border-collapse:collapse; width:100%; font-size:.92em}
+th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--rule); vertical-align:top}
+th{font-family:var(--f-mono); font-weight:500; font-size:.78em; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.old{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--rule-strong)}
+td.new{font-weight:600}
+
+/* mockup */
+.demo{background:var(--sheet); border:1px solid var(--rule); border-radius:var(--radius); margin-top:20px; overflow:hidden}
+.appbar{display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--rule); background:var(--bg)}
+.appbar .brand{font-family:var(--f-display); font-weight:750; font-stretch:85%; font-size:1.1rem; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap}
+.appbar .brand small{font-family:var(--f-mono); font-weight:400; font-size:.72rem; color:var(--muted)}
+.seg{display:inline-flex; border:1px solid var(--rule-strong); border-radius:6px; overflow:hidden; flex-wrap:wrap}
+.seg button{font:inherit; font-size:.85rem; border:0; background:var(--sheet); color:var(--ink); padding:6px 11px; cursor:pointer}
+.seg button + button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.seg button:disabled{cursor:not-allowed; opacity:.55}
+.toolbar{display:flex; flex-wrap:wrap; gap:14px 26px; padding:12px 16px; border-bottom:1px solid var(--rule); align-items:center}
+.toolbar .grp{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.chk{display:inline-flex; gap:6px; align-items:center; font-size:.88rem; cursor:pointer}
+.chk input{accent-color:var(--accent); width:16px; height:16px}
+.workspace{display:grid; grid-template-columns:minmax(0,1fr) 340px}
+@media (max-width:960px){ .workspace{grid-template-columns:minmax(0,1fr)} }
+.planpane{padding:12px 12px 4px; min-width:0; border-right:1px solid var(--rule)}
+@media (max-width:960px){ .planpane{border-right:0; border-bottom:1px solid var(--rule)} }
+.levels{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px}
+.levels button{font-family:var(--f-mono); font-size:.78rem; padding:4px 9px; border:1px solid var(--rule); border-radius:4px; background:var(--sheet); color:var(--muted); cursor:pointer}
+.levels button[aria-pressed="true"]{border-color:var(--ink); color:var(--ink)}
+.levels button:disabled{cursor:default; opacity:.6}
+.planscroll{overflow-x:auto}
+#plan{width:100%; min-width:680px; height:auto; display:block}
+#plan .lot{cursor:pointer}
+#plan .lot:focus{outline:none}
+#plan .lot:focus-visible .sel, #plan .lot.is-sel .sel{stroke:var(--accent); stroke-width:4}
+#plan .lot:hover .base{filter:brightness(.96)}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; padding:8px 4px 10px; font-size:.82rem; color:var(--muted); align-items:center}
+.sw{display:inline-block; width:14px; height:14px; border-radius:3px; border:1px solid var(--rule-strong); vertical-align:-2px; margin-right:5px}
+
+/* fiche */
+.fiche{padding:16px; display:flex; flex-direction:column; gap:14px; min-width:0}
+.fiche header{display:flex; justify-content:space-between; gap:10px; align-items:baseline}
+.fiche h3{font-size:1.5rem; font-stretch:85%}
+.kv{display:grid; grid-template-columns:auto minmax(0,1fr); gap:3px 12px; font-size:.86rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0; overflow-wrap:anywhere}
+.field{display:flex; flex-direction:column; gap:6px}
+.field > span{font-family:var(--f-mono); font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+select,input[type="date"],input[type="text"],textarea{font:inherit; font-size:.88rem; color:var(--ink); background:var(--sheet); border:1px solid var(--rule-strong); border-radius:5px; padding:5px 8px}
+select:disabled,input:disabled,textarea:disabled{opacity:.6}
+textarea{width:100%; min-height:62px; resize:vertical}
+.alert{border-left:3px solid var(--bad); background:var(--bg); padding:7px 10px; font-size:.84rem; border-radius:0 4px 4px 0}
+.alert.warn{border-left-color:var(--warn)}
+.comments{display:flex; flex-direction:column; gap:8px; max-height:240px; overflow:auto}
+.cmt{border:1px solid var(--rule); border-radius:5px; padding:8px 10px; font-size:.86rem}
+.cmt .meta{display:flex; gap:8px; justify-content:space-between; font-family:var(--f-mono); font-size:.72rem; color:var(--muted); margin-bottom:3px; flex-wrap:wrap}
+.pill{font-family:var(--f-mono); font-size:.68rem; border-radius:99px; padding:1px 7px; border:1px solid currentColor}
+.pill.int{color:var(--warn)} .pill.sh{color:var(--ok)}
+.btn{font:inherit; font-size:.86rem; font-weight:600; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:5px; padding:6px 12px; cursor:pointer}
+.btn.ghost{background:transparent; color:var(--accent)}
+.ro{font-size:.82rem; color:var(--muted); border:1px dashed var(--rule-strong); border-radius:5px; padding:8px 10px}
+
+.tabs{display:flex; gap:0; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); background:var(--bg); flex-wrap:wrap}
+.tabs button{font:inherit; font-size:.86rem; border:0; border-right:1px solid var(--rule); background:transparent; color:var(--muted); padding:9px 16px; cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--sheet); color:var(--ink); font-weight:600; box-shadow:inset 0 -2px 0 var(--accent)}
+.tabpanel{padding:0}
+.tabpanel table td{white-space:nowrap}
+.tabpanel tbody tr{cursor:pointer}
+.tabpanel tbody tr.is-sel td{background:var(--accent-soft)}
+.flash{animation:fl 1.2s ease-out}
+@keyframes fl{from{background:color-mix(in srgb,var(--accent) 30%,transparent)}to{background:transparent}}
+.dot{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; border:1px solid var(--rule-strong); vertical-align:-1px}
+.dpe{display:inline-grid; place-items:center; width:20px; height:18px; border-radius:3px; font-family:var(--f-display); font-weight:800; font-size:.78rem; color:#111}
+.journal{list-style:none; margin:0; padding:10px 16px; display:flex; flex-direction:column; gap:6px; font-size:.86rem; max-height:260px; overflow:auto}
+.journal li{display:grid; grid-template-columns:120px minmax(0,1fr); gap:10px}
+.journal li .mono{color:var(--muted)}
+.export{padding:12px 16px; display:flex; flex-direction:column; gap:10px}
+.export pre{margin:0; overflow:auto; max-height:240px; font-family:var(--f-mono); font-size:.74rem; line-height:1.5; background:var(--bg); border:1px solid var(--rule); border-radius:5px; padding:10px}
+.foot{padding:10px 16px; font-size:.8rem; color:var(--muted); border-top:1px solid var(--rule)}
+
+/* flow */
+.flow{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; border:1px solid var(--rule); border-radius:var(--radius); overflow:hidden}
+.flow > div{padding:14px 16px; border-right:1px solid var(--rule); display:flex; flex-direction:column; gap:6px; min-width:0}
+.flow > div:last-child{border-right:0}
+.flow .k{font-family:var(--f-mono); font-size:.72rem; color:var(--accent); letter-spacing:.06em}
+.flow p{font-size:.88rem}
+@media (max-width:820px){ .flow{grid-template-columns:minmax(0,1fr)} .flow > div{border-right:0; border-bottom:1px solid var(--rule)} .flow > div:last-child{border-bottom:0} }
+.layers{font-family:var(--f-mono); font-size:.8rem; border:1px solid var(--rule); border-radius:5px; overflow:hidden}
+.layers div{display:grid; grid-template-columns:16px 120px minmax(0,1fr); gap:10px; padding:6px 10px; border-bottom:1px solid var(--rule); align-items:center}
+.layers div:last-child{border-bottom:0}
+.layers div.hl{background:var(--accent-soft)}
+
+.arch{display:grid; grid-template-columns:minmax(0,1fr) 40px minmax(0,1.1fr) 40px minmax(0,1fr); align-items:stretch}
+.arch .arr{display:grid; place-items:center; font-family:var(--f-mono); color:var(--muted)}
+@media (max-width:900px){ .arch{grid-template-columns:minmax(0,1fr)} .arch .arr{padding:4px 0; transform:rotate(90deg)} }
+ul.plain{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:4px; font-size:.92em}
+.opt{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px}
+@media (max-width:820px){ .opt{grid-template-columns:minmax(0,1fr)} }
+.opt .card.rec{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent)}
+.badge{align-self:flex-start; font-family:var(--f-mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; background:var(--accent); color:var(--accent-ink); padding:2px 8px; border-radius:3px}
+.qs{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px}
+.q{border:1px solid var(--rule); border-radius:var(--radius); padding:12px 14px; font-size:.92em}
+.q b{display:block; margin-bottom:4px}
+.road{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px}
+@media (max-width:820px){ .road{grid-template-columns:minmax(0,1fr)} }
+.road .card h3{font-size:1.05rem}
+.closing{font-family:var(--f-display); font-size:var(--s-1); font-weight:650; font-stretch:90%; padding:28px 4px 0; text-align:left}
+@media (prefers-reduced-motion: reduce){ .flash{animation:none} }
+</style>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Proposition v2 · Impasse Léger · rue de Tocqueville · Paris 17ᵉ</div>
+      <h1 style="margin-top:12px">Plan Vivant, en ligne et partageable</h1>
+      <p class="lead">Les plans AutoCAD de l’immeuble deviennent une carte des lots. On y pose des calques (occupation, travaux, DPE) et des commentaires. Le tableau reste exportable vers Excel et Access, et un simple lien suffit pour le montrer à un organisme partenaire.</p>
+      <div class="tags">
+        <span class="tag">103 lots · 116 locaux</span>
+        <span class="tag">6 niveaux</span>
+        <span class="tag">plans DWG/DXF</span>
+        <span class="tag">rien à installer</span>
+      </div>
+    </div>
+    <div class="stack" aria-hidden="true">
+      <svg viewBox="0 0 460 330">
+        <defs>
+          <pattern id="hh" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="8" fill="var(--signal)" opacity=".75"/></pattern>
+        </defs>
+        <!-- each sheet is an iso parallelogram -->
+        <g transform="translate(30 210)">
+          <path d="M0 40 L200 -40 L400 40 L200 120 Z" fill="var(--sheet)" stroke="var(--rule-strong)"/>
+          <g stroke="var(--wall)" stroke-width="1.3" fill="none" opacity=".85">
+            <path d="M60 40 L200 -16 L340 40 L200 96 Z"/>
+            <path d="M107 21 L247 77"/><path d="M153 3 L293 59"/><path d="M200 -16 L200 -16"/>
+            <path d="M130 68 L270 12"/>
+          </g>
+          <text x="410" y="44" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">plan AutoCAD</text>
+        </g>
+        <g transform="translate(30 130)">
+          <path d="M0 40 L200 -40 L400 40 L200 120 Z" fill="var(--sheet)" fill-opacity=".55" stroke="var(--rule-strong)"/>
+          <path d="M60 40 L107 21 L177 49 L130 68 Z" fill="var(--st-loue)" stroke="var(--wall)" stroke-width=".8"/>
+          <path d="M107 21 L153 3 L223 31 L177 49 Z" fill="var(--st-preavis)" stroke="var(--wall)" stroke-width=".8"/>
+          <path d="M153 3 L200 -16 L270 12 L223 31 Z" fill="var(--st-loue)" stroke="var(--wall)" stroke-width=".8"/>
+          <path d="M130 68 L177 49 L247 77 L200 96 Z" fill="var(--dpe-g)" stroke="var(--wall)" stroke-width=".8" opacity=".9"/>
+          <path d="M177 49 L223 31 L293 59 L247 77 Z" fill="var(--st-vacant)" stroke="var(--wall)" stroke-width=".8"/>
+          <path d="M223 31 L270 12 L340 40 L293 59 Z" fill="var(--st-loue)" stroke="var(--wall)" stroke-width=".8"/>
+          <text x="410" y="44" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">fond</text>
+        </g>
+        <g transform="translate(30 50)">
+          <path d="M0 40 L200 -40 L400 40 L200 120 Z" fill="var(--sheet)" fill-opacity=".35" stroke="var(--rule-strong)" stroke-dasharray="4 4"/>
+          <path d="M177 49 L223 31 L293 59 L247 77 Z" fill="url(#hh)"/>
+          <g transform="translate(138 24)"><path d="M-12 -9 h24 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-14 l-6 6 v-6 h-4 a4 4 0 0 1 -4 -4 v-10 a4 4 0 0 1 4 -4z" fill="var(--accent)"/><text y="4" text-anchor="middle" font-family="var(--f-mono)" font-size="10" fill="var(--accent-ink)">2</text></g>
+          <g transform="translate(200 70)"><path d="M0 -11 L11 8 L-11 8 Z" fill="var(--bad)"/><text y="6" text-anchor="middle" font-family="var(--f-display)" font-weight="800" font-size="10" fill="#fff">!</text></g>
+          <text x="410" y="44" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">symboles</text>
+        </g>
+      </svg>
+    </div>
+  </header>
+
+  <!-- 01 -->
+  <section class="sheet" id="besoin">
+    <div class="cart"><span class="num">01</span><span class="eyebrow">Le besoin, revu</span></div>
+    <div class="body">
+      <h2>Moins d’outillage, plus de partage</h2>
+      <p>La première version reposait sur un Excel resté sur le PC et un petit programme Windows pour le synchroniser. Le besoin a changé : l’outil doit être consultable par d’autres organismes, et les plans viendront d’AutoCAD. La solution devient plus simple. Les données vivent en ligne, et Excel devient une sortie (et une entrée ponctuelle) au lieu d’être le maître.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Sujet</th><th>Version 1 (oct. 2026)</th><th>Version 2, proposée ici</th></tr></thead>
+          <tbody>
+            <tr><td>Où vivent les données</td><td class="old">Fichier Excel sur le PC</td><td class="new">Base en ligne, hébergée en Europe</td></tr>
+            <tr><td>Lien avec Excel</td><td class="old">Agent Windows, synchro en direct</td><td class="new">Export en un clic, lien actualisable, import avec contrôle</td></tr>
+            <tr><td>Access</td><td class="old">Non prévu</td><td class="new">Tables liées en lecture, ou import de l’export</td></tr>
+            <tr><td>Plans</td><td class="old">Scans PDF à détourer automatiquement</td><td class="new">Plans vectoriels DWG/DXF, lots tracés en polylignes</td></tr>
+            <tr><td>Suivi</td><td class="old">Un statut + une note</td><td class="new">Occupation, travaux, DPE, fil de commentaires daté</td></tr>
+            <tr><td>Accès</td><td class="old">Un seul PC Windows</td><td class="new">Navigateur, tablette, téléphone, comptes et liens de partage</td></tr>
+            <tr><td>Installation</td><td class="old">Programme à installer, alerte SmartScreen</td><td class="new">Aucune</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" style="font-size:.9em">Le travail de la v1 n’est pas perdu : la lecture des pastilles sur les PDF (116 sur 116) sert de solution de secours si un niveau n’existe qu’en PDF, et le rapprochement plan ↔ Excel a déjà fait ressortir six écarts à corriger.</p>
+    </div>
+  </section>
+
+  <!-- 02 MAQUETTE -->
+  <section class="sheet" id="maquette" style="display:block">
+    <div class="cart" style="border-right:0; border-bottom:1px solid var(--rule); flex-direction:row; align-items:baseline; gap:12px; padding:14px 18px"><span class="num">02</span><span class="eyebrow">Maquette interactive · schéma du RDC · lots et surfaces réels, suivi d’exemple</span></div>
+    <div class="body" style="padding-bottom:0">
+      <h2>Essayez : changez de calque, ouvrez un lot, commentez</h2>
+      <p>Cliquez sur un lot pour ouvrir sa fiche. Modifiez son occupation, cochez des travaux, ajoutez un commentaire : le plan, le tableau, le journal et l’export suivent. Passez en vue « Organisme partenaire » pour voir ce qu’un invité verrait.</p>
+    </div>
+    <div class="demo" style="margin:20px clamp(12px,2vw,24px) clamp(12px,2vw,24px)">
+      <div class="appbar">
+        <div class="brand">Plan Vivant <small>Tocqueville · Impasse Léger</small></div>
+        <div class="row" style="gap:10px">
+          <span class="eyebrow" style="letter-spacing:.04em">Voir comme</span>
+          <div class="seg" role="group" aria-label="Rôle">
+            <button type="button" data-role="gestion" aria-pressed="true">Gestionnaire</button>
+            <button type="button" data-role="partenaire" aria-pressed="false">Organisme partenaire</button>
+          </div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="grp">
+          <span class="eyebrow" style="letter-spacing:.04em">Fond</span>
+          <div class="seg" role="group" aria-label="Calque de fond">
+            <button type="button" data-layer="occupation" aria-pressed="true">Occupation</button>
+            <button type="button" data-layer="dpe" aria-pressed="false">DPE</button>
+            <button type="button" data-layer="none" aria-pressed="false">Aucun</button>
+          </div>
+        </div>
+        <div class="grp">
+          <span class="eyebrow" style="letter-spacing:.04em">Symboles</span>
+          <label class="chk"><input type="checkbox" id="s-travaux" checked> Travaux</label>
+          <label class="chk"><input type="checkbox" id="s-comments" checked> Commentaires</label>
+          <label class="chk"><input type="checkbox" id="s-alertes" checked> Alertes</label>
+        </div>
+      </div>
+      <div class="workspace">
+        <div class="planpane">
+          <div class="levels" role="group" aria-label="Niveau">
+            <button type="button" disabled>Sous-sol</button>
+            <button type="button" aria-pressed="true">RDC</button>
+            <button type="button" disabled>1ᵉʳ</button>
+            <button type="button" disabled>2ᵉ</button>
+            <button type="button" disabled>3ᵉ</button>
+            <button type="button" disabled>4ᵉ</button>
+          </div>
+          <div class="planscroll"><svg id="plan" viewBox="24 64 952 296" role="img" aria-label="Plan schématique du rez-de-chaussée"></svg></div>
+          <div class="legend" id="legend"></div>
+        </div>
+        <aside class="fiche" id="fiche" aria-live="polite"></aside>
+      </div>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="table" aria-selected="true">Tableau</button>
+        <button type="button" role="tab" data-tab="journal" aria-selected="false">Journal des modifications</button>
+        <button type="button" role="tab" data-tab="export" aria-selected="false">Export Excel / Access</button>
+      </div>
+      <div class="tabpanel" id="tab-table">
+        <div class="tbl" style="border:0; border-radius:0">
+          <table>
+            <thead><tr><th>N° lot</th><th>Locaux</th><th>Niveaux</th><th>Type</th><th>m²</th><th>Occupation</th><th>Travaux</th><th>DPE</th><th>Date DPE</th><th>Comm.</th><th>Mis à jour</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tabpanel" id="tab-journal" hidden><ul class="journal" id="journal"></ul></div>
+      <div class="tabpanel" id="tab-export" hidden>
+        <div class="export">
+          <div class="row" style="justify-content:space-between">
+            <span class="muted" style="font-size:.86rem">Aperçu de l’onglet <b>LOTS</b> du fichier exporté (séparateur « ; », ouvrable tel quel dans Excel et importable dans Access).</span>
+            <button type="button" class="btn ghost" id="copy">Copier</button>
+          </div>
+          <pre id="csv"></pre>
+        </div>
+      </div>
+      <div class="foot">Maquette : numéros de lots, identifiants, niveaux, types et surfaces viennent du fichier 30_LOCAUX fourni. Occupation, travaux, DPE (sauf 1201 et 1202), dates et commentaires sont des exemples. Rien n’est enregistré.</div>
+    </div>
+  </section>
+
+  <!-- 03 CALQUES -->
+  <section class="sheet" id="calques">
+    <div class="cart"><span class="num">03</span><span class="eyebrow">Grammaire du plan</span></div>
+    <div class="body">
+      <h2>Un fond au choix, des symboles par-dessus</h2>
+      <p>Une couleur ne peut dire qu’une chose à la fois. Le fond du lot montre donc une seule information choisie (occupation ou DPE), et les symboles s’ajoutent sans la masquer. On peut ainsi voir d’un coup d’œil un logement loué, en travaux, avec un DPE à refaire et deux commentaires.</p>
+      <div class="cols">
+        <div class="card">
+          <span class="eyebrow">Fond · occupation</span>
+          <div class="row" style="gap:12px; font-size:.9em"><span><span class="sw" style="background:var(--st-loue)"></span>Loué</span><span><span class="sw" style="background:var(--st-preavis)"></span>Préavis reçu</span><span><span class="sw" style="background:var(--st-vacant)"></span>Vacant</span></div>
+          <p class="muted">Liste modifiable : à relouer, en vente, usage propre… à fixer avec la cliente.</p>
+        </div>
+        <div class="card">
+          <span class="eyebrow">Fond · DPE</span>
+          <div class="row" style="gap:4px">
+            <span class="dpe" style="background:var(--dpe-a)">A</span><span class="dpe" style="background:var(--dpe-b)">B</span><span class="dpe" style="background:var(--dpe-c)">C</span><span class="dpe" style="background:var(--dpe-d)">D</span><span class="dpe" style="background:var(--dpe-e)">E</span><span class="dpe" style="background:var(--dpe-f)">F</span><span class="dpe" style="background:var(--dpe-g); color:#fff">G</span><span class="dpe" style="background:var(--dpe-none); width:auto; padding:0 6px; font-weight:600; color:var(--ink)">?</span>
+          </div>
+          <p class="muted">Les couleurs officielles de l’étiquette énergie. Le gris signale un DPE absent : 75 locaux sur 116 dans l’Excel actuel.</p>
+        </div>
+        <div class="card">
+          <span class="eyebrow">Symboles</span>
+          <div class="row" style="gap:14px; font-size:.9em">
+            <span><svg width="18" height="14" style="vertical-align:-2px"><defs><pattern id="lg-h" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.4" height="6" fill="var(--signal)"/></pattern></defs><rect width="18" height="14" fill="url(#lg-h)" stroke="var(--signal)"/></svg> Travaux</span>
+            <span><svg width="18" height="16" style="vertical-align:-3px"><path d="M2 1 h14 a2 2 0 0 1 2 2 v7 a2 2 0 0 1 -2 2 h-9 l-4 4 v-4 h-1 a2 2 0 0 1 -2 -2 v-7 a2 2 0 0 1 2 -2z" fill="var(--accent)"/></svg> Commentaires (nombre)</span>
+            <span><svg width="16" height="15" style="vertical-align:-2px"><path d="M8 1 L15 14 L1 14 Z" fill="var(--bad)"/></svg> Alerte</span>
+          </div>
+          <p class="muted">Les alertes sont calculées, pas saisies : DPE manquant, DPE expiré, classe G ou F au regard des interdictions de location.</p>
+        </div>
+      </div>
+      <div class="card" style="background:var(--bg)">
+        <span class="eyebrow">Règles DPE intégrées (logements)</span>
+        <ul class="plain">
+          <li>Classe <b>G</b> : non décent, donc plus louable en l’état depuis le 1ᵉʳ janvier 2025 (nouveau bail, renouvellement ou reconduction).</li>
+          <li>Classe <b>F</b> : même règle au 1ᵉʳ janvier 2028, puis <b>E</b> en 2034. Loyers gelés pour F et G depuis août 2022.</li>
+          <li>Validité : 10 ans. Un DPE réalisé avant le 1ᵉʳ juillet 2021 n’est plus valable aujourd’hui et doit être refait.</li>
+        </ul>
+        <p class="muted" style="font-size:.85em">Les locaux commerciaux et professionnels ne sont pas concernés par ces interdictions : l’outil ne lève l’alerte que sur les logements (T1, T2…).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 AUTOCAD -->
+  <section class="sheet" id="autocad">
+    <div class="cart"><span class="num">04</span><span class="eyebrow">Des plans AutoCAD au plan web</span></div>
+    <div class="body">
+      <h2>Avec un DWG, chaque lot est déjà un dessin</h2>
+      <p>Les PDF reçus sont des images : il fallait reconnaître les lots par leurs couleurs. Un fichier AutoCAD contient au contraire des lignes et des calques. Si chaque lot y est tracé par un contour fermé portant son numéro, la conversion est automatique et exacte au centimètre.</p>
+      <div class="flow">
+        <div><span class="k">ÉTAPE 1 · CABINET</span><h3>Export DXF</h3><p>Depuis AutoCAD : « Enregistrer sous » au format DXF, un fichier par niveau (ou un fichier avec une présentation par niveau).</p></div>
+        <div><span class="k">ÉTAPE 2 · CONTRÔLE</span><h3>Calque des lots</h3><p>Vérifier qu’un calque contient les contours fermés des lots et leurs numéros. Sinon, l’ajouter : une demi-journée de dessin pour 103 lots.</p></div>
+        <div><span class="k">ÉTAPE 3 · CONVERSION</span><h3>DXF → SVG</h3><p>Un script lit le DXF, garde murs, portes et textes utiles, et transforme chaque contour en zone cliquable rattachée à son n° de lot.</p></div>
+        <div><span class="k">ÉTAPE 4 · EN LIGNE</span><h3>Mise à jour</h3><p>Un plan modifié ? On redépose le DXF : les lots gardent leur suivi, seuls les contours changent. Écarts signalés avant validation.</p></div>
+      </div>
+      <div class="cols">
+        <div style="display:flex; flex-direction:column; gap:8px; min-width:0">
+          <span class="eyebrow">Calques attendus dans le DWG (exemple)</span>
+          <div class="layers">
+            <div><span class="sw" style="background:var(--wall); margin:0"></span><span>MURS</span><span class="muted">dessinés en fond</span></div>
+            <div><span class="sw" style="background:var(--rule-strong); margin:0"></span><span>PORTES</span><span class="muted">dessinées en fond</span></div>
+            <div class="hl"><span class="sw" style="background:var(--accent); margin:0"></span><span>LOTS</span><span>polylignes fermées, une par lot et par niveau</span></div>
+            <div class="hl"><span class="sw" style="background:var(--accent); margin:0"></span><span>LOTS_NUM</span><span>texte ou attribut « 1201 » placé dans le contour</span></div>
+            <div><span class="sw" style="background:var(--bg); margin:0"></span><span>COTES, MOBILIER</span><span class="muted">ignorés</span></div>
+          </div>
+        </div>
+        <div class="card" style="background:var(--bg)">
+          <span class="eyebrow">À demander avec les plans</span>
+          <ul class="plain">
+            <li>Les fichiers <b>DWG</b> d’origine (pas un PDF imprimé depuis AutoCAD, qui perd les calques).</li>
+            <li>Le nom du calque des lots s’il existe déjà, et l’unité du dessin (mètre ou centimètre).</li>
+            <li>Les références externes (XREF) éventuelles, jointes au dossier.</li>
+            <li>Un lot sur plusieurs niveaux (le 101 : RDC, cave, 1ᵉʳ) porte le même numéro sur chaque plan : l’outil les relie.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 EXCEL / ACCESS -->
+  <section class="sheet" id="tableur">
+    <div class="cart"><span class="num">05</span><span class="eyebrow">Liaison tableur</span></div>
+    <div class="body">
+      <h2>Excel et Access restent dans la boucle</h2>
+      <p>Les données de suivi sont rangées comme dans un tableur : une table des lots, une des locaux (les 116 lignes de 30_LOCAUX), une des commentaires, une de l’historique. Trois façons de les retrouver dans ses fichiers, à choisir selon l’usage.</p>
+      <div class="cols">
+        <div class="card">
+          <span class="eyebrow">Export · tous</span>
+          <h3>Fichier .xlsx en un clic</h3>
+          <p>Un classeur avec les onglets LOTS, LOCAUX, COMMENTAIRES et HISTORIQUE, aux mêmes colonnes que 30_LOCAUX plus celles du suivi. Le plus simple pour archiver ou transmettre.</p>
+        </div>
+        <div class="card">
+          <span class="eyebrow">Lien actualisable · Excel</span>
+          <h3>« Actualiser tout »</h3>
+          <p>Le classeur de la cliente se connecte une fois à une adresse privée (<span class="mono">Données › À partir du Web</span>, Power Query). Ensuite, un clic sur Actualiser ramène l’état du jour, sans copier-coller. Ses formules et tableaux croisés s’appuient dessus.</p>
+        </div>
+        <div class="card">
+          <span class="eyebrow">Tables liées · Access</span>
+          <h3>Lecture directe de la base</h3>
+          <p>Access se branche sur la base en ligne par ODBC (pilote PostgreSQL gratuit), avec un compte en lecture seule. Les requêtes et états Access voient toujours les données à jour. Plus simple encore : importer l’export .xlsx.</p>
+        </div>
+        <div class="card">
+          <span class="eyebrow">Import · gestionnaire</span>
+          <h3>Mise à jour en masse</h3>
+          <p>Pour changer 30 lignes d’un coup, on modifie l’export dans Excel et on le redépose. L’outil affiche les différences ligne par ligne et n’applique qu’après validation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 PARTAGE -->
+  <section class="sheet" id="partage">
+    <div class="cart"><span class="num">06</span><span class="eyebrow">Partage avec les organismes</span></div>
+    <div class="body">
+      <h2>Chacun voit ce qui le concerne</h2>
+      <p>Un bailleur social, un syndic, un bureau d’études ou une collectivité n’ont pas besoin des mêmes informations. Les accès se donnent par personne, avec un rôle, et chaque commentaire est marqué interne ou partagé.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Accès</th><th>Plan et calques</th><th>Modifier</th><th>Commentaires</th><th>Export</th></tr></thead>
+          <tbody>
+            <tr><td><b>Gestionnaire</b><br><span class="muted">la cliente</span></td><td>Tout</td><td>Tout, gère les accès</td><td>Internes et partagés</td><td>Oui</td></tr>
+            <tr><td><b>Collaborateur</b><br><span class="muted">gardien, assistante</span></td><td>Tout</td><td>Occupation, travaux, DPE</td><td>Internes et partagés</td><td>Oui</td></tr>
+            <tr><td><b>Organisme partenaire</b><br><span class="muted">compte nominatif</span></td><td>Calques choisis par la gestionnaire</td><td>Non</td><td>Partagés, peut répondre</td><td>Selon réglage</td></tr>
+            <tr><td><b>Lien de consultation</b><br><span class="muted">sans compte</span></td><td>Un ou plusieurs niveaux, lecture</td><td>Non</td><td>Aucun</td><td>Non</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cols">
+        <div class="card"><span class="eyebrow">Connexion</span><p>Par lien reçu par e-mail, sans mot de passe à retenir. Un lien de consultation peut expirer à une date choisie et se révoque en un clic.</p></div>
+        <div class="card"><span class="eyebrow">Traçabilité</span><p>Chaque modification est datée et signée dans le journal. On sait qui a passé le 1002 en travaux, et quand.</p></div>
+        <div class="card"><span class="eyebrow">Données personnelles</span><p>Les noms de locataires ne figurent pas dans les vues partagées. Hébergement dans l’Union européenne, sauvegarde quotidienne, export complet à tout moment (RGPD et réversibilité).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 ARCHI -->
+  <section class="sheet" id="architecture">
+    <div class="cart"><span class="num">07</span><span class="eyebrow">Architecture</span></div>
+    <div class="body">
+      <h2>Une application web, une base de données, c’est tout</h2>
+      <div class="arch">
+        <div class="card"><span class="eyebrow">Navigateur</span><h3>L’application</h3><ul class="plain"><li>Plans SVG par niveau</li><li>Fiches, calques, commentaires</li><li>Ordinateur, tablette, téléphone</li></ul></div>
+        <div class="arr">⇄</div>
+        <div class="card" style="border-color:var(--accent)"><span class="eyebrow">Hébergé en UE</span><h3>Base PostgreSQL</h3><ul class="plain"><li>Tables LOTS, LOCAUX, COMMENTAIRES, HISTORIQUE</li><li>Comptes, rôles, règles d’accès par ligne</li><li>Plans et pièces jointes stockés à côté</li></ul></div>
+        <div class="arr">⇄</div>
+        <div class="card"><span class="eyebrow">Postes de la cliente</span><h3>Excel, Access</h3><ul class="plain"><li>Export .xlsx</li><li>Power Query (lien actualisable)</li><li>ODBC en lecture seule</li></ul></div>
+      </div>
+      <div class="opt">
+        <div class="card rec">
+          <span class="badge">Recommandé</span>
+          <h3>A · Application sur mesure</h3>
+          <p>Interface pensée pour le plan, base PostgreSQL gérée (Supabase, région Europe) et site statique. Les partenaires ont une expérience simple, sans outil à apprendre.</p>
+          <p class="muted">Hébergement : de 0 à environ 25 € par mois selon le volume, plus un nom de domaine (environ 12 € par an).</p>
+        </div>
+        <div class="card">
+          <h3>B · Grist + widget plan</h3>
+          <p>Grist est un tableur en ligne libre, utilisé par l’administration française. Les données y sont saisies comme dans Excel, et le plan s’affiche dans un panneau personnalisé à côté. Moins de développement, mais le plan est moins mis en avant et chaque partenaire doit utiliser Grist.</p>
+          <p class="muted">Utile si la cliente préfère garder une vraie grille de tableur au centre.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 QUESTIONS -->
+  <section class="sheet" id="questions">
+    <div class="cart"><span class="num">08</span><span class="eyebrow">À valider avec la cliente</span></div>
+    <div class="body">
+      <h2>Huit questions avant de lancer</h2>
+      <div class="qs">
+        <div class="q"><b>Quels statuts d’occupation ?</b>Loué, vacant, préavis reçu… Faut-il aussi « en vente », « à relouer », « usage propre » ?</div>
+        <div class="q"><b>Quels organismes, pour voir quoi ?</b>Leur nombre et, pour chacun, les calques et niveaux à montrer.</div>
+        <div class="q"><b>Les fichiers DWG sont-ils disponibles ?</b>Qui les tient (géomètre, architecte), quelle version d’AutoCAD, existe-t-il un calque des lots ?</div>
+        <div class="q"><b>Que fait-elle dans Access ?</b>Des requêtes en lecture suffisent-elles, ou Access doit-il aussi écrire dans le suivi ?</div>
+        <div class="q"><b>Noms des locataires dans l’outil ?</b>Utile pour elle, sensible pour les partenaires. On peut les garder dans un champ interne seulement.</div>
+        <div class="q"><b>Pièces jointes ?</b>Joindre le PDF du DPE, des photos de chantier, des devis à chaque lot.</div>
+        <div class="q"><b>Qui écrit des commentaires ?</b>Elle seule, son équipe, ou aussi les partenaires en réponse ?</div>
+        <div class="q"><b>Cet immeuble seulement ?</b>Si d’autres suivent, l’outil gère plusieurs immeubles dès le départ.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 ROADMAP -->
+  <section class="sheet" id="feuille-de-route">
+    <div class="cart"><span class="num">09</span><span class="eyebrow">Feuille de route</span></div>
+    <div class="body">
+      <h2>Livrer l’essentiel, puis ouvrir</h2>
+      <div class="road">
+        <div class="card"><span class="eyebrow">Version 1 · le suivi</span><ul class="plain"><li>6 niveaux convertis depuis les DXF, 103 lots reliés aux 116 locaux</li><li>Calques occupation, DPE, travaux, alertes</li><li>Fil de commentaires par lot</li><li>Export .xlsx, import de 30_LOCAUX</li><li>Compte gestionnaire, liens de consultation</li></ul></div>
+        <div class="card"><span class="eyebrow">Version 2 · le partage</span><ul class="plain"><li>Comptes partenaires et rôles</li><li>Commentaires internes / partagés</li><li>Lien Excel actualisable, accès ODBC pour Access</li><li>Import Excel avec écarts à valider</li></ul></div>
+        <div class="card"><span class="eyebrow">Version 3 · le dossier</span><ul class="plain"><li>Pièces jointes (DPE, photos, devis)</li><li>Calque « futur plan » de l’architecte</li><li>Échéancier des travaux et des DPE</li><li>Plusieurs immeubles</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="closing">Le plan AutoCAD décrit l’immeuble. Plan Vivant dit où en est chaque lot, et à qui on peut le montrer.</p>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (n, a = {}, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const m2 = n => n.toFixed(1).replace('.', ',');
+  const today = '08/10/2026';
+  const now = () => { const d = new Date(); return today + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+
+  /* lots réels du RDC (30_LOCAUX), suivi d'exemple */
+  const ROWS = [
+    { lot: '1201', locaux: [['IL 12A/00/G0', 'RDC', 29.5]], type: 'T2', w: 112, rooms: ['Séjour', 'Chambre'], occ: 'vacant', travaux: false, fin: '', dpe: 'G', dpeDate: '2022-03-14', maj: '02/10/2026',
+      cmts: [{ who: 'Gestion', when: '02/10/2026', vis: 'int', txt: 'Projet de réunion avec le 1202, plans architecte attendus.' }] },
+    { lot: '1202', locaux: [['IL 12A/00/D0', 'RDC', 31.2]], type: 'T2', w: 112, rooms: ['Séjour', 'Chambre'], occ: 'loue', travaux: false, fin: '', dpe: 'E', dpeDate: '2023-05-10', maj: '', cmts: [] },
+    { hall: true, w: 42 },
+    { lot: '1002', locaux: [['IL 10A/00/G0', 'RDC', 24.2]], type: 'T2', w: 104, rooms: ['Séjour', 'Chambre'], occ: 'vacant', travaux: true, fin: 'fin novembre 2026', dpe: '', dpeDate: '', maj: '06/10/2026',
+      cmts: [{ who: 'Gestion', when: '06/10/2026', vis: 'sh', txt: 'Réfection de la salle d’eau en cours. Carrelage repris la semaine prochaine.' },
+             { who: 'Gestion', when: '06/10/2026', vis: 'int', txt: 'Faire faire le DPE après travaux, avant remise en location.' }] },
+    { hall: true, w: 42 },
+    { lot: '1001', locaux: [['IL 10A/00/D0', 'RDC', 23.1]], type: 'T2', w: 104, rooms: ['Pièce', 'Cuisine'], occ: 'loue', travaux: false, fin: '', dpe: 'D', dpeDate: '2019-11-20', maj: '', cmts: [] },
+    { lot: '800', locaux: [['IL 08A/00/G0', 'RDC', 29.2]], type: 'Commerce', w: 96, rooms: ['Local commercial'], occ: 'preavis', travaux: false, fin: '', dpe: '', dpeDate: '', maj: '29/09/2026',
+      cmts: [{ who: 'Gestion', when: '29/09/2026', vis: 'int', txt: 'Préavis reçu, départ prévu au 31/12.' }] },
+    { hall: true, w: 42 },
+    { lot: '801', locaux: [['IL 08A/00/D0', 'RDC', 75.7]], type: 'PRO', w: 130, rooms: ['Atelier'], occ: 'vacant', travaux: false, fin: '', dpe: '', dpeDate: '', maj: '',
+      cmts: [{ who: 'Gestion', when: '15/09/2026', vis: 'sh', txt: 'Atelier disponible, visites possibles le mardi.' }] },
+    { lot: '102', locaux: [['TO 57A/00/G0', 'RDC', 66.4], ['TO 57A/C0/G0', 'Cave', 87.1]], type: 'PRO', w: 112, rooms: ['Boulangerie'], occ: 'loue', travaux: false, fin: '', dpe: '', dpeDate: '', maj: '', extra: '+ cave',
+      cmts: [{ who: 'Gestion', when: '11/09/2026', vis: 'sh', txt: 'Laboratoire en cave, accès par la cour.' }] },
+  ];
+  ROWS.forEach(r => { if (r.locaux) r.surf = r.locaux.reduce((t, l) => t + l[2], 0); });
+  const LOTS = ROWS.filter(r => !r.hall);
+  const OCC = { loue: 'Loué', preavis: 'Préavis reçu', vacant: 'Vacant' };
+  const OCCV = { loue: 'var(--st-loue)', preavis: 'var(--st-preavis)', vacant: 'var(--st-vacant)' };
+  const DPEV = { A: 'var(--dpe-a)', B: 'var(--dpe-b)', C: 'var(--dpe-c)', D: 'var(--dpe-d)', E: 'var(--dpe-e)', F: 'var(--dpe-f)', G: 'var(--dpe-g)' };
+  const isLogement = r => /^T\d/.test(r.type);
+  const fmtDate = iso => iso ? iso.split('-').reverse().join('/') : '';
+
+  function alerts(r) {
+    const a = [];
+    if (!isLogement(r)) return a;
+    if (!r.dpe) a.push(['bad', 'DPE non renseigné : obligatoire pour louer.']);
+    if (r.dpe === 'G') a.push(['bad', 'Classe G : logement non décent depuis le 1ᵉʳ janvier 2025, location impossible en l’état.']);
+    if (r.dpe === 'F') a.push(['warn', 'Classe F : interdit à la location au 1ᵉʳ janvier 2028.']);
+    if (r.dpe && r.dpeDate && r.dpeDate < '2021-07-01') a.push(['bad', 'DPE réalisé avant juillet 2021 : plus valable, à refaire.']);
+    return a;
+  }
+
+  const state = { layer: 'occupation', sym: { travaux: true, comments: true, alertes: true }, role: 'gestion', sel: null, journal: [
+    { when: '06/10/2026 09:12', who: 'Gestion', txt: 'Lot 1002 · Travaux : non → oui (fin novembre 2026)' },
+    { when: '29/09/2026 17:40', who: 'Gestion', txt: 'Lot 800 · Occupation : Loué → Préavis reçu' },
+  ] };
+  const visCmts = r => state.role === 'gestion' ? r.cmts : r.cmts.filter(c => c.vis === 'sh');
+
+  /* ---------- plan ---------- */
+  const svg = $('#plan');
+  const defs = el('defs', {}, svg);
+  const pat = el('pattern', { id: 'hatch', width: 10, height: 10, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+  el('rect', { width: 3.5, height: 10, fill: 'var(--signal)', opacity: .8 }, pat);
+  const pat2 = el('pattern', { id: 'hallh', width: 6, height: 6, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(-45)' }, defs);
+  el('rect', { width: 1, height: 6, fill: 'var(--rule-strong)' }, pat2);
+
+  const Y0 = 110, H = 190, X0 = 52;
+  const total = ROWS.reduce((t, r) => t + r.w, 0);
+  el('line', { x1: X0 - 20, y1: Y0 - 18, x2: X0 + total + 20, y2: Y0 - 18, stroke: 'var(--rule-strong)', 'stroke-dasharray': '6 5' }, svg);
+  const st = el('text', { x: X0, y: Y0 - 32, 'font-family': 'var(--f-mono)', 'font-size': 12, 'letter-spacing': 3, fill: 'var(--muted)' }, svg); st.textContent = 'IMPASSE LÉGER';
+  const ct = el('text', { x: X0 + total / 2, y: Y0 + H + 58, 'text-anchor': 'middle', 'font-family': 'var(--f-mono)', 'font-size': 12, 'letter-spacing': 3, fill: 'var(--muted)' }, svg); ct.textContent = 'COUR';
+  el('line', { x1: X0 - 20, y1: Y0 + H + 34, x2: X0 + total + 20, y2: Y0 + H + 34, stroke: 'var(--rule-strong)', 'stroke-dasharray': '6 5' }, svg);
+
+  let x = X0;
+  ROWS.forEach(r => {
+    const w = r.w;
+    if (r.hall) {
+      el('rect', { x, y: Y0, width: w, height: H, fill: 'url(#hallh)' }, svg);
+      el('rect', { x, y: Y0, width: w, height: H, fill: 'none', stroke: 'var(--wall)', 'stroke-width': 1.2 }, svg);
+      const t = el('text', { x: x + w / 2, y: Y0 + H / 2, 'text-anchor': 'middle', 'font-family': 'var(--f-mono)', 'font-size': 10, fill: 'var(--muted)', transform: `rotate(-90 ${x + w / 2} ${Y0 + H / 2})` }, svg); t.textContent = 'HALL';
+      x += w; return;
+    }
+    r.x = x;
+    const g = el('g', { class: 'lot', tabindex: 0, role: 'button', 'aria-label': 'Lot ' + r.lot }, svg);
+    r.g = g;
+    r.base = el('rect', { class: 'base', x, y: Y0, width: w, height: H }, g);
+    r.hatch = el('rect', { x, y: Y0, width: w, height: H, fill: 'url(#hatch)', 'pointer-events': 'none' }, g);
+    // inner walls
+    if (r.rooms.length === 2) {
+      const xi = x + Math.round(w * .56);
+      el('line', { x1: xi, y1: Y0, x2: xi, y2: Y0 + 82, stroke: 'var(--wall)', 'stroke-width': 2 }, g);
+      el('line', { x1: xi, y1: Y0 + 112, x2: xi, y2: Y0 + H, stroke: 'var(--wall)', 'stroke-width': 2 }, g);
+      [[x + (xi - x) / 2, r.rooms[0]], [xi + (x + w - xi) / 2, r.rooms[1]]].forEach(([cx, n]) => { const t = el('text', { x: cx, y: Y0 + 112 + 22, 'text-anchor': 'middle', 'font-size': 11, 'font-family': 'var(--f-body)', fill: 'var(--muted)', 'pointer-events': 'none' }, g); t.textContent = n; });
+    } else {
+      const t = el('text', { x: x + w / 2, y: Y0 + 134, 'text-anchor': 'middle', 'font-size': 11, 'font-family': 'var(--f-body)', fill: 'var(--muted)', 'pointer-events': 'none' }, g); t.textContent = r.rooms[0];
+    }
+    // door on façade
+    el('line', { x1: x + w / 2 - 12, y1: Y0, x2: x + w / 2 + 12, y2: Y0, stroke: 'var(--sheet)', 'stroke-width': 4 }, g);
+    el('path', { d: `M${x + w / 2 - 12} ${Y0} A24 24 0 0 1 ${x + w / 2 + 12} ${Y0 + 21}`, fill: 'none', stroke: 'var(--wall)', 'stroke-width': .8 }, g);
+    el('rect', { class: 'sel', x, y: Y0, width: w, height: H, fill: 'none', stroke: 'var(--wall)', 'stroke-width': 2.2 }, g);
+    // label pill
+    const lp = el('g', { 'pointer-events': 'none' }, g);
+    el('rect', { x: x + w / 2 - 25, y: Y0 + 150, width: 50, height: 20, rx: 10, fill: 'var(--sheet)', stroke: 'var(--wall)', 'stroke-width': 1 }, lp);
+    const lt = el('text', { x: x + w / 2, y: Y0 + 164, 'text-anchor': 'middle', 'font-family': 'var(--f-mono)', 'font-size': 11.5, 'font-weight': 500, fill: 'var(--ink)' }, lp); lt.textContent = r.lot;
+    if (r.extra) { const e = el('text', { x: x + w / 2, y: Y0 + 184, 'text-anchor': 'middle', 'font-family': 'var(--f-mono)', 'font-size': 9, fill: 'var(--muted)', 'pointer-events': 'none' }, g); e.textContent = r.extra; }
+    // symbols
+    r.bub = el('g', { transform: `translate(${x + w - 20} ${Y0 + 22})`, 'pointer-events': 'none' }, g);
+    el('path', { d: 'M-12 -10 h24 a4 4 0 0 1 4 4 v11 a4 4 0 0 1 -4 4 h-14 l-6 6 v-6 h-4 a4 4 0 0 1 -4 -4 v-11 a4 4 0 0 1 4 -4z', fill: 'var(--accent)' }, r.bub);
+    r.bubT = el('text', { y: 4, 'text-anchor': 'middle', 'font-family': 'var(--f-mono)', 'font-size': 11, 'font-weight': 500, fill: 'var(--accent-ink)' }, r.bub);
+    r.alr = el('g', { transform: `translate(${x + 20} ${Y0 + 22})`, 'pointer-events': 'none' }, g);
+    el('path', { d: 'M0 -12 L12 9 L-12 9 Z', fill: 'var(--bad)', stroke: 'var(--sheet)', 'stroke-width': 1.5 }, r.alr);
+    const at = el('text', { y: 6, 'text-anchor': 'middle', 'font-family': 'var(--f-display)', 'font-size': 12, 'font-weight': 800, fill: '#fff' }, r.alr); at.textContent = '!';
+    g.addEventListener('click', () => select(r));
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(r); } });
+    x += w;
+  });
+
+  function paintPlan() {
+    LOTS.forEach(r => {
+      let f = 'var(--st-none)';
+      if (state.layer === 'occupation') f = OCCV[r.occ];
+      if (state.layer === 'dpe') f = DPEV[r.dpe] || 'var(--dpe-none)';
+      r.base.setAttribute('fill', f);
+      r.hatch.style.display = state.sym.travaux && r.travaux ? '' : 'none';
+      const n = visCmts(r).length;
+      r.bub.style.display = state.sym.comments && n ? '' : 'none';
+      r.bubT.textContent = n;
+      r.alr.style.display = state.sym.alertes && alerts(r).length ? '' : 'none';
+      r.g.classList.toggle('is-sel', state.sel === r);
+    });
+    const L = $('#legend');
+    if (state.layer === 'occupation') L.innerHTML = Object.entries(OCC).map(([k, v]) => `<span><span class="sw" style="background:${OCCV[k]}"></span>${v}</span>`).join('');
+    else if (state.layer === 'dpe') L.innerHTML = Object.entries(DPEV).map(([k, v]) => `<span><span class="sw" style="background:${v}"></span>${k}</span>`).join('') + `<span><span class="sw" style="background:var(--dpe-none)"></span>Non renseigné</span>`;
+    else L.innerHTML = '<span>Plan seul, symboles conservés.</span>';
+  }
+
+  /* ---------- fiche ---------- */
+  const fiche = $('#fiche');
+  function renderFiche() {
+    const r = state.sel;
+    if (!r) { fiche.innerHTML = '<p class="muted" style="font-size:.9rem">Cliquez sur un lot du plan ou une ligne du tableau pour ouvrir sa fiche.</p>'; return; }
+    const ro = state.role !== 'gestion';
+    const dis = ro ? 'disabled' : '';
+    const al = alerts(r);
+    const cm = visCmts(r);
+    fiche.innerHTML = `
+      <header><h3>Lot ${r.lot}</h3><span class="mono muted">${esc(r.type || '—')} · ${m2(r.surf)} m²</span></header>
+      <dl class="kv">${r.locaux.map(l => `<dt>${l[1]}</dt><dd class="mono">${l[0]} · ${m2(l[2])} m²</dd>`).join('')}</dl>
+      ${al.map(([k, t]) => `<div class="alert ${k === 'warn' ? 'warn' : ''}">${t}</div>`).join('')}
+      <label class="field"><span>Occupation</span>
+        <select id="f-occ" ${dis}>${Object.entries(OCC).map(([k, v]) => `<option value="${k}" ${k === r.occ ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      <div class="field"><span>Travaux</span>
+        <div class="row"><label class="chk"><input type="checkbox" id="f-trv" ${r.travaux ? 'checked' : ''} ${dis}> En cours</label>
+        <input type="text" id="f-fin" placeholder="fin prévue" value="${esc(r.fin)}" ${dis || (r.travaux ? '' : 'disabled')} style="flex:1; min-width:120px" aria-label="Fin prévue des travaux"></div></div>
+      <div class="field"><span>DPE</span>
+        <div class="row"><select id="f-dpe" ${dis} aria-label="Classe DPE"><option value="">Non renseigné</option>${'ABCDEFG'.split('').map(k => `<option ${k === r.dpe ? 'selected' : ''}>${k}</option>`).join('')}</select>
+        <input type="date" id="f-dpd" value="${r.dpeDate}" ${dis} aria-label="Date du diagnostic"></div></div>
+      <div class="field"><span>Commentaires (${cm.length})</span>
+        <div class="comments">${cm.length ? cm.map(c => `<div class="cmt"><div class="meta"><span>${esc(c.who)} · ${c.when}</span><span class="pill ${c.vis}">${c.vis === 'int' ? 'Interne' : 'Partagé'}</span></div>${esc(c.txt)}</div>`).join('') : '<span class="muted" style="font-size:.85rem">Aucun commentaire visible.</span>'}</div>
+        ${ro ? '<div class="ro">Vue partenaire : lecture seule. Les commentaires internes et les modifications ne sont pas visibles.</div>' : `
+        <textarea id="f-txt" placeholder="Ajouter un commentaire sur le lot ${r.lot}…" aria-label="Nouveau commentaire"></textarea>
+        <div class="row" style="justify-content:space-between">
+          <select id="f-vis" aria-label="Visibilité"><option value="int">Interne</option><option value="sh">Partagé avec les organismes</option></select>
+          <button type="button" class="btn" id="f-add">Ajouter</button></div>`}
+      </div>`;
+    if (ro) return;
+    $('#f-occ').addEventListener('change', e => change(r, 'Occupation', OCC[r.occ], OCC[e.target.value], () => r.occ = e.target.value));
+    $('#f-trv').addEventListener('change', e => change(r, 'Travaux', r.travaux ? 'oui' : 'non', e.target.checked ? 'oui' : 'non', () => r.travaux = e.target.checked));
+    $('#f-fin').addEventListener('change', e => change(r, 'Fin des travaux', r.fin || '—', e.target.value || '—', () => r.fin = e.target.value));
+    $('#f-dpe').addEventListener('change', e => change(r, 'DPE', r.dpe || '—', e.target.value || '—', () => r.dpe = e.target.value));
+    $('#f-dpd').addEventListener('change', e => change(r, 'Date DPE', fmtDate(r.dpeDate) || '—', fmtDate(e.target.value) || '—', () => r.dpeDate = e.target.value));
+    $('#f-add').addEventListener('click', () => {
+      const t = $('#f-txt').value.trim();
+      if (!t) { $('#f-txt').focus(); return; }
+      const vis = $('#f-vis').value;
+      r.cmts.push({ who: 'Vous', when: today, vis, txt: t });
+      log(r, `Commentaire ${vis === 'int' ? 'interne' : 'partagé'} ajouté`);
+    });
+  }
+  function change(r, field, from, to, apply) { apply(); log(r, `${field} : ${from} → ${to}`); }
+  function log(r, txt) {
+    r.maj = today;
+    state.journal.unshift({ when: now(), who: 'Vous', txt: `Lot ${r.lot} · ${txt}` });
+    renderAll(r);
+  }
+
+  /* ---------- tableau, journal, export ---------- */
+  function renderTable(flashLot) {
+    $('#tbody').innerHTML = LOTS.map(r => {
+      const n = visCmts(r).length;
+      return `<tr data-lot="${r.lot}" class="${state.sel === r ? 'is-sel' : ''}">
+        <td class="mono"><b>${r.lot}</b></td><td class="mono">${r.locaux.map(l => l[0]).join(' · ')}</td><td>${r.locaux.map(l => l[1]).join(', ')}</td>
+        <td>${esc(r.type)}</td><td class="mono">${m2(r.surf)}</td>
+        <td><span class="dot" style="background:${OCCV[r.occ]}"></span>${OCC[r.occ]}</td>
+        <td>${r.travaux ? 'Oui' + (r.fin ? ' · ' + esc(r.fin) : '') : '—'}</td>
+        <td>${r.dpe ? `<span class="dpe" style="background:${DPEV[r.dpe]};${r.dpe === 'G' ? 'color:#fff' : ''}">${r.dpe}</span>` : '<span class="muted">—</span>'}</td>
+        <td class="mono">${fmtDate(r.dpeDate) || '—'}</td><td class="mono">${n || '—'}</td><td class="mono">${r.maj || '—'}</td></tr>`;
+    }).join('');
+    $$('#tbody tr').forEach(tr => tr.addEventListener('click', () => select(LOTS.find(r => r.lot === tr.dataset.lot))));
+    if (flashLot) { const tr = $(`#tbody tr[data-lot="${flashLot.lot}"]`); if (tr) tr.querySelectorAll('td').forEach(td => td.classList.add('flash')); }
+  }
+  function renderJournal() {
+    $('#journal').innerHTML = state.journal.map(j => `<li><span class="mono">${j.when}</span><span><b>${esc(j.who)}</b> · ${esc(j.txt)}</span></li>`).join('');
+  }
+  function renderCsv() {
+    const q = v => { v = String(v ?? ''); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const head = ['N° lot', 'Locaux', 'Niveaux', 'Type', 'Surface m²', 'Occupation', 'Travaux', 'Fin travaux', 'DPE', 'Date DPE', 'Alertes', 'Nb commentaires', 'Dernier commentaire partagé', 'Mis à jour'];
+    const lines = [head.join(';')].concat(LOTS.map(r => {
+      const sh = r.cmts.filter(c => c.vis === 'sh');
+      return [r.lot, r.locaux.map(l => l[0]).join(' | '), r.locaux.map(l => l[1]).join(', '), r.type, m2(r.surf), OCC[r.occ], r.travaux ? 'Oui' : 'Non', r.fin, r.dpe, fmtDate(r.dpeDate), alerts(r).map(a => a[1]).join(' / '), r.cmts.length, sh.length ? sh[sh.length - 1].txt : '', r.maj].map(q).join(';');
+    }));
+    $('#csv').textContent = lines.join('\n');
+  }
+  function renderAll(flashLot) { paintPlan(); renderFiche(); renderTable(flashLot); renderJournal(); renderCsv(); }
+  function select(r) { state.sel = r; paintPlan(); renderFiche(); renderTable(); }
+
+  /* ---------- contrôles ---------- */
+  $$('[data-layer]').forEach(b => b.addEventListener('click', () => { state.layer = b.dataset.layer; $$('[data-layer]').forEach(o => o.setAttribute('aria-pressed', o === b)); paintPlan(); }));
+  [['s-travaux', 'travaux'], ['s-comments', 'comments'], ['s-alertes', 'alertes']].forEach(([id, k]) => $('#' + id).addEventListener('change', e => { state.sym[k] = e.target.checked; paintPlan(); }));
+  $$('[data-role]').forEach(b => b.addEventListener('click', () => {
+    state.role = b.dataset.role; $$('[data-role]').forEach(o => o.setAttribute('aria-pressed', o === b));
+    const ro = state.role !== 'gestion';
+    $('[data-tab="journal"]').hidden = ro; $('[data-tab="export"]').hidden = ro;
+    if (ro) showTab('table');
+    renderAll();
+  }));
+  function showTab(t) {
+    $$('[role="tab"]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
+    ['table', 'journal', 'export'].forEach(k => $('#tab-' + k).hidden = k !== t);
+  }
+  $$('[role="tab"]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  $('#copy').addEventListener('click', e => {
+    const b = e.currentTarget, txt = $('#csv').textContent;
+    const done = ok => { b.textContent = ok ? 'Copié' : 'Sélectionné, Ctrl+C pour copier'; setTimeout(() => b.textContent = 'Copier', 2200); };
+    const fallback = () => { const s = getSelection(), rg = document.createRange(); rg.selectNodeContents($('#csv')); s.removeAllRanges(); s.addRange(rg); done(false); };
+    try { navigator.clipboard.writeText(txt).then(() => done(true), fallback); } catch (_) { fallback(); }
+  });
+
+  state.sel = LOTS[0];
+  renderAll();
+})();
+</script>
