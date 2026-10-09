@@ -10,6 +10,15 @@ services:
       - app_data:/data
     expose:
       - "3000"
+    depends_on:
+      - convertisseur
+
+  # Conversion des plans DWG (onglet « Plans ») : service interne, jamais exposé
+  convertisseur:
+    build: ./converter
+    restart: unless-stopped
+    expose:
+      - "8000"
 
   caddy:
     image: caddy:2

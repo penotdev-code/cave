@@ -91,6 +91,22 @@ location / {
 
 et un certificat avec `certbot --nginx -d plan.mondomaine.fr`.
 
+## Plans : import du DWG et retouches (onglet « Plans »)
+
+Réservé aux comptes « gestion ». Le bouton **Plans** (en haut) ouvre la gestion des versions du plan :
+
+1. **Listing de référence** : importer le classeur Excel des locaux (30_LOCAUX…). Il apporte les types, surfaces et identifiants, et sert aux contrôles.
+2. **Importer le DWG du géomètre** : le service `convertisseur` (LibreDWG + ezdxf, interne, jamais exposé) lit les niveaux (une présentation = un niveau), le fond de plan, les surfaces des lots (calque `COPRO_APLAT`) et leurs numéros (`COPRO_TEXTE_NUM_LOT`). Le résultat est un **brouillon** : rien ne change pour les autres.
+3. **Retoucher** : l'onglet « À vérifier » liste ce que le convertisseur n'a pas pu trancher seul (surface sans numéro, numéro sans surface, rattachements automatiques à confirmer), avec des suggestions. Retouche des formes point par point (aimantées aux murs), dessin, renumérotation, annuler / rétablir. Enregistrement automatique.
+4. **Contrôles** : lots du listing absents du plan (et inversement), surfaces très différentes du listing niveau par niveau, lots déjà suivis qui disparaîtraient.
+5. **Publier** : le brouillon devient le plan de tout le monde ; la version précédente est archivée (on peut en refaire un brouillon pour revenir en arrière). Les informations de suivi (occupation, DPE, commentaires) sont liées au numéro de lot et ne sont jamais effacées.
+
+Le convertisseur peut aussi s'utiliser en ligne de commande :
+
+```sh
+sudo docker compose run --rm -v "$PWD:/w" convertisseur /venv/bin/python dwg2plan.py /w/plan.dwg --listing /w/30_LOCAUX.xlsx -o /w/plan.json --rapport /w/rapport.json
+```
+
 ## En cas de souci
 
 ```sh
@@ -103,6 +119,5 @@ Si le certificat ne s'obtient pas : vérifier que le DNS pointe bien vers le VPS
 
 ## Limites de cette version
 
-- Les plans de 800, 801, 102 et du 2ᵉ étage sont des schémas provisoires : ils seront remplacés par la conversion des fichiers AutoCAD (`public/plan.json`).
-- Identifiants et surfaces ne sont connus que pour 8 lots : l'import complet de 30_LOCAUX est la prochaine étape.
+- Tant qu'aucune version n'est publiée dans l'onglet « Plans », l'application affiche les schémas provisoires de `public/plan.json`.
 - Les comptes se gèrent en ligne de commande ; pas encore d'écran d'administration ni de mot de passe oublié par e-mail.

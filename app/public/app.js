@@ -35,14 +35,17 @@ const PV = (() => {
   function start(B) {
     const PLAN = B.plan;
     const LEVELS = PLAN.levels;
-    const LOTS = [];
+    const LOTS = [], byId = {};
     LEVELS.forEach(L => L.lots.forEach(g => {
+      const known = byId[g.lot];
+      if (known) { known.levels.push(L); known.geos[L.id] = g; if (!(PLAN.ref[g.lot] || {}).locaux?.length) known.niveaux += ', ' + L.name; return; }
       const ref = PLAN.ref[g.lot] || { type: '', locaux: [] };
       const surf = ref.locaux.reduce((t, x) => t + (x[2] || 0), 0);
-      LOTS.push({ id: g.lot, level: L, geo: g, type: ref.type, locaux: ref.locaux, surf: ref.locaux.length && surf ? surf : null,
-        niveaux: ref.locaux.length ? [...new Set(ref.locaux.map(x => x[1]))].join(', ') : L.name });
+      const l = { id: g.lot, level: L, levels: [L], geo: g, geos: { [L.id]: g }, type: ref.type, locaux: ref.locaux, surf: ref.locaux.length && surf ? surf : null,
+        niveaux: ref.locaux.length ? [...new Set(ref.locaux.map(x => x[1]))].join(', ') : L.name };
+      LOTS.push(l); byId[l.id] = l;
     }));
-    const byId = Object.fromEntries(LOTS.map(l => [l.id, l]));
+    const onLevel = (l, L) => l.levels.includes(L);
 
     const S = { level: LEVELS[0], color: 'occ', filter: null, all: false, sel: null, open: null, drafts: {},
       lots: {}, comments: [], journal: [], canWrite: B.canWrite, canInternal: B.canInternal };
@@ -53,51 +56,77 @@ const PV = (() => {
     $('#who').textContent = B.me ? B.me.name + (S.canWrite ? '' : ' · consultation') : '';
     $('#logout').hidden = !B.logout;
     $('#history-btn').hidden = !S.canInternal;
+    $('#plans-btn').hidden = !(S.canInternal && B.plansAdmin);
     $('#hint').textContent = S.canWrite
       ? 'Cliquez un lot sur le plan ou une ligne du tableau. Modifiez directement dans le tableau : tout est enregistré aussitôt.'
       : 'Cliquez un lot sur le plan ou une ligne du tableau pour le retrouver de l’autre côté. Accès en consultation.';
 
     /* ===================== PLAN ===================== */
     const svg = $('#plan');
+    // Zoom et déplacement (molette, glisser, pincer) ; les étiquettes restent lisibles
+    const views = {};
+    const zoom = PVPlan.zoomable(svg, { onView: upp => {
+      views[S.level.id] = zoom ? zoom.view : null;
+      const k = PVPlan.labelScale(upp, 23, 11);
+      $$('.tag', svg).forEach(t => t.setAttribute('transform', `translate(${t.dataset.x} ${t.dataset.y}) scale(${k})`));
+      svg.classList.toggle('rooms-off', 16 / upp < 7);
+    } });
+    $$('[data-zoom]').forEach(b => b.addEventListener('click', () => { const z = b.dataset.zoom; if (z === 'fit') zoom.fit(); else zoom.zoom(z === 'in' ? 1.6 : 1 / 1.6); }));
     function drawLevel() {
-      const L = S.level;
+      const L = S.level, v2 = PVPlan.isV2(L);
       svg.innerHTML = '';
-      svg.setAttribute('viewBox', L.vb.join(' '));
       svg.setAttribute('aria-label', 'Plan · ' + L.name);
+      svg.classList.toggle('v2', v2);
       const defs = el('defs', {}, svg);
       const p = el('pattern', { id: 'hatch', width: 12, height: 12, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
       el('rect', { width: 4, height: 12, fill: 'var(--signal)', opacity: .75 }, p);
-      L.texts.forEach(([x, y, t]) => { const e = el('text', { x, y, 'text-anchor': 'middle', class: 'p-label' }, svg); e.textContent = t; });
+      if (v2) PVPlan.background(svg, L);
+      // Parties communes, puis lots, puis textes et étiquettes par-dessus
       L.halls.forEach(h => {
-        el('polygon', { points: h.poly.join(' '), class: 'p-hall' }, svg);
-        const xs = h.poly.map(q => q[0]), ys = h.poly.map(q => q[1]);
-        const t = el('text', { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 + 4, 'text-anchor': 'middle', class: 'p-room' }, svg); t.textContent = h.label;
+        if (h.parts) el('path', { d: PVPlan.shapeD(h), 'fill-rule': 'evenodd', class: 'p-hall' }, svg);
+        else el('polygon', { points: h.poly.join(' '), class: 'p-hall' }, svg);
+        if (!v2 && h.label) {
+          const xs = h.poly.map(q => q[0]), ys = h.poly.map(q => q[1]);
+          const t = el('text', { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 + 4, 'text-anchor': 'middle', class: 'p-room' }, svg); t.textContent = h.label;
+        }
       });
+      const tags = [];
       L.lots.forEach(g => {
         const l = byId[g.lot];
         const G = el('g', { class: 'lot', tabindex: 0, role: 'button', 'aria-label': 'Lot ' + g.lot, 'data-lot': g.lot }, svg);
-        const pts = g.poly.join(' ');
-        l.base = el('polygon', { class: 'base', points: pts }, G);
-        l.hatch = el('polygon', { points: pts, fill: 'url(#hatch)', 'pointer-events': 'none' }, G);
-        g.walls.forEach(w => el('line', { x1: w[0], y1: w[1], x2: w[2], y2: w[3], class: 'p-wall' }, G));
-        g.rooms.forEach(([x, y, n]) => { const t = el('text', { x, y, 'text-anchor': 'middle', class: 'p-room' }, G); t.textContent = n; });
-        el('polygon', { class: 'outline', points: pts }, G);
+        const shape = (a = {}) => g.parts ? el('path', { d: PVPlan.shapeD(g), 'fill-rule': 'evenodd', ...a }, G) : el('polygon', { points: g.poly.join(' '), ...a }, G);
+        l.base = shape({ class: 'base' });
+        l.hatch = shape({ fill: 'url(#hatch)', 'pointer-events': 'none' });
+        (g.walls || []).forEach(w => el('line', { x1: w[0], y1: w[1], x2: w[2], y2: w[3], class: 'p-wall' }, G));
+        (g.rooms || []).forEach(([x, y, n]) => { const t = el('text', { x, y, 'text-anchor': 'middle', class: 'p-room' }, G); t.textContent = n; });
+        shape({ class: 'outline' });
+        tags.push([g, l, G]);
+      });
+      if (v2) PVPlan.texts(svg, L);
+      else L.texts.forEach(([x, y, t]) => { const e = el('text', { x, y, 'text-anchor': 'middle', class: 'p-label' }, svg); e.textContent = t; });
+      // Bulles des numéros (au-dessus de tout, à taille lisible quel que soit le zoom)
+      for (const [g, l, G] of tags) {
         const [tx, ty] = g.tag, r = g.lot.length > 3 ? 27 : 23;
-        el('circle', { cx: tx, cy: ty, r, class: 'p-tag' }, G);
-        const lt = el('text', { x: tx, y: ty + 6, 'text-anchor': 'middle', class: 'p-num' }, G); lt.textContent = g.lot;
-        if (g.extra) { const e = el('text', { x: tx, y: ty + r + 18, 'text-anchor': 'middle', class: 'p-extra' }, G); e.textContent = g.extra; }
-        l.badge = el('g', { transform: `translate(${tx + r + 4} ${ty - r - 2})`, 'pointer-events': 'none' }, G);
+        const T = el('g', { class: 'tag', 'data-x': tx, 'data-y': ty, transform: `translate(${tx} ${ty})`, 'pointer-events': 'none' }, G);
+        el('circle', { r, class: 'p-tag' }, T);
+        const lt = el('text', { y: 6, 'text-anchor': 'middle', class: 'p-num' }, T); lt.textContent = g.lot;
+        if (g.extra) { const e = el('text', { y: r + 18, 'text-anchor': 'middle', class: 'p-extra' }, T); e.textContent = g.extra; }
+        l.badge = el('g', { transform: `translate(${r + 4} ${-r - 2})` }, T);
         el('circle', { r: 11, class: 'p-badge' }, l.badge);
         l.badgeT = el('text', { y: 4.5, 'text-anchor': 'middle', class: 'p-badge-t' }, l.badge);
-        l.warn = el('g', { transform: `translate(${tx - r - 4} ${ty - r - 2})`, 'pointer-events': 'none' }, G);
+        l.warn = el('g', { transform: `translate(${-r - 4} ${-r - 2})` }, T);
         el('path', { d: 'M0 -12 L12 9 L-12 9 Z', class: 'p-warn' }, l.warn);
         const wt = el('text', { y: 6, 'text-anchor': 'middle', class: 'p-warn-t' }, l.warn); wt.textContent = '!';
         G.addEventListener('click', () => select(l, 'plan'));
         G.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(l, 'plan'); } });
         G.addEventListener('mouseenter', () => hover(l.id, true));
         G.addEventListener('mouseleave', () => hover(l.id, false));
-      });
+      }
+      const saved = views[L.id];  // zoom mémorisé pour ce niveau (lu avant la remise à zéro)
+      zoom.reset(L.vb);
+      if (saved) zoom.focus([saved[0], saved[1], saved[0] + saved[2], saved[1] + saved[3]], 0);
       $$('#levels button').forEach(b => b.setAttribute('aria-pressed', b.dataset.level === L.id));
+      $('#zoom-ctl').hidden = !v2;
     }
     const matches = l => {
       if (!S.filter) return true;
@@ -110,7 +139,8 @@ const PV = (() => {
     function paintPlan() {
       S.level.lots.forEach(g => {
         const l = byId[g.lot], s = T(l.id);
-        l.base.setAttribute('fill', S.color === 'occ' ? OCCV[s.occ] : DPEV[s.dpe]);
+        // en style (et non en attribut) : var() y est toujours résolue, y compris pour l'export PDF
+        l.base.style.fill = S.color === 'occ' ? OCCV[s.occ] : DPEV[s.dpe];
         l.hatch.style.display = s.travaux ? '' : 'none';
         const n = cmts(l.id).length;
         l.badge.style.display = n ? '' : 'none'; l.badgeT.textContent = n;
@@ -123,7 +153,7 @@ const PV = (() => {
 
     /* ===================== LÉGENDE = FILTRES ===================== */
     function renderLegend() {
-      const pool = S.all ? LOTS : LOTS.filter(l => l.level === S.level);
+      const pool = S.all ? LOTS : LOTS.filter(l => onLevel(l, S.level));
       const count = f => pool.filter(l => { const s = T(l.id); return f(l, s); }).length;
       let chips;
       if (S.color === 'occ') chips = Object.keys(OCC).map(k => [k, OCC[k], `<span class="sw" style="background:${OCCV[k]}"></span>`, count((l, s) => s.occ === k)]);
@@ -150,7 +180,7 @@ const PV = (() => {
       const dateCell = ro() || !s.dpe ? (fmtDate(s.dpeDate) ? `<span class="muted">${fmtDate(s.dpeDate)}</span>` : '') : `<input type="date" data-k="dpeDate" value="${esc(s.dpeDate)}" aria-label="Date du DPE">`;
       return `<tr class="row ${S.sel === l ? 'is-sel' : ''}" data-lot="${l.id}">
         <th scope="row"><span class="num">${l.id}</span>${al.length ? `<span class="warn" title="${esc(al.join(' · '))}">!</span>` : ''}<span class="sub">${[l.type, l.surf ? m2(l.surf) + ' m²' : ''].filter(Boolean).join(' · ') || '&nbsp;'}</span></th>
-        ${S.all ? `<td>${esc(l.level.name)}</td>` : ''}
+        ${S.all ? `<td>${esc(l.levels.map(L => L.name).join(', '))}</td>` : ''}
         <td>${occCell}</td><td class="c-trv">${trvCell}</td><td><span class="c-dpe">${dpeCell}${dateCell}</span></td>
         <td><button type="button" class="cm ${S.open === l.id ? 'open' : ''}" data-act="cm" aria-expanded="${S.open === l.id}">
           <span class="bubble ${n ? 'on' : ''}">${n || '+'}</span><span class="cm-last">${last ? esc(last.txt) : (S.canWrite ? 'Ajouter' : '')}</span></button></td>
@@ -169,7 +199,7 @@ const PV = (() => {
           </div></div>` : ''}
       </div></td></tr>`;
     }
-    function lotsShown() { return (S.all ? LOTS : LOTS.filter(l => l.level === S.level)).filter(matches).sort((a, b) => (S.all ? LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level) : 0) || a.id - b.id); }
+    function lotsShown() { return (S.all ? LOTS : LOTS.filter(l => onLevel(l, S.level))).filter(matches).sort((a, b) => (S.all ? LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level) : 0) || a.id - b.id); }
     function renderTable() {
       $('#col-level').hidden = !S.all;
       const act = document.activeElement, keep = act && tbody.contains(act) && act.closest('tr');
@@ -210,14 +240,14 @@ const PV = (() => {
 
     function hover(id, on) {
       const l = byId[id]; if (!l) return;
-      if (l.base && l.level === S.level) l.base.parentNode.classList.toggle('hover', on);
+      if (l.base && onLevel(l, S.level)) l.base.parentNode.classList.toggle('hover', on);
       $$(`#tbody tr[data-lot="${id}"]`).forEach(tr => tr.classList.toggle('hover', on));
     }
     function select(l, from) {
       if (!l) return;
       S.sel = l;
-      if (l.level !== S.level && !S.all) { S.level = l.level; drawLevel(); }
-      else if (l.level !== S.level) { S.level = l.level; drawLevel(); }
+      // Le lot est-il sur le niveau affiché ? Sinon on va sur son premier niveau
+      if (!onLevel(l, S.level)) { S.level = l.level; drawLevel(); }
       if (!matches(l)) S.filter = null;
       refresh();
       const tr = $(`#tbody tr.row[data-lot="${l.id}"]`);
@@ -227,6 +257,12 @@ const PV = (() => {
         if (innerWidth < 1100) $('#table-pane').scrollIntoView({ block: 'start', behavior: 'smooth' });
       }
       if (from === 'table' && innerWidth < 1100) $('#plan-pane').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      // Plan détaillé : on cadre le lot s'il est hors de la vue
+      const geo = l.geos[S.level.id];
+      if (from !== 'plan' && geo && geo.parts) {
+        const [x0, y0, x1, y1] = PVPlan.bounds(geo.parts), v = zoom.view;
+        if (x0 < v[0] || y0 < v[1] || x1 > v[0] + v[2] || y1 > v[1] + v[3]) zoom.focus([x0, y0, x1, y1], 1.2);
+      }
     }
 
     /* ===================== ÉCRITURES ===================== */
@@ -347,13 +383,22 @@ const PV = (() => {
         drawLevel(); paintPlan();
         const live = [svg, ...svg.querySelectorAll('*')];
         const copy = svg.cloneNode(true), copies = [copy, ...copy.querySelectorAll('*')];
+        // Les couleurs des lots sont des variables CSS (var(--st-loue)…) : on les résout nous-mêmes,
+        // le navigateur ne le fait pas toujours pour des éléments qui viennent d'être créés.
+        const resolve = v => String(v || '').replace(/var\((--[\w-]+)\)/g, (_, name) => cssVar(name) || '#ffffff');
         live.forEach((n, i) => {
           const cs = getComputedStyle(n), c = copies[i];
           c.removeAttribute('class');
-          const st = STYLE_PROPS.map(p => `${p}:${cs.getPropertyValue(p)}`).join(';') + ';font-family:Helvetica,Arial,sans-serif';
+          const val = p => {
+            const own = p === 'fill' || p === 'stroke' ? (n.style && n.style.getPropertyValue(p)) || n.getAttribute(p) : '';
+            return own && own.includes('var(') ? resolve(own) : cs.getPropertyValue(p);
+          };
+          const st = STYLE_PROPS.map(p => `${p}:${val(p)}`).join(';') + ';font-family:Helvetica,Arial,sans-serif';
           c.setAttribute('style', st);
         });
         copy.querySelectorAll('[tabindex]').forEach(n => { n.removeAttribute('tabindex'); n.removeAttribute('role'); });
+        copy.querySelectorAll('.tag, [data-x]').forEach(n => { if (n.dataset && n.dataset.x) n.setAttribute('transform', `translate(${n.dataset.x} ${n.dataset.y})`); });
+        copy.setAttribute('viewBox', L.vb.join(' '));
         copy.setAttribute('xmlns', NS);
         vb = L.vb;
         markup = new XMLSerializer().serializeToString(copy);
@@ -411,7 +456,7 @@ const PV = (() => {
           const p = doc.addPage(W, H);
           header(p, L.name);
           // Légende du niveau
-          const pool = LOTS.filter(l => l.level === L && keepLot(l));
+          const pool = LOTS.filter(l => onLevel(l, L) && keepLot(l));
           const n = f => pool.filter(l => f(l, T(l.id))).length;
           const items = (S.color === 'occ'
             ? Object.keys(OCC).map(k => [col.occ[k], OCC[k], n((l, s) => s.occ === k)])
@@ -431,7 +476,7 @@ const PV = (() => {
       }
 
       if (opt.table) {
-        const lots = LOTS.filter(l => levels.includes(l.level) && keepLot(l)).sort((a, b) => LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level) || a.id - b.id);
+        const lots = LOTS.filter(l => l.levels.some(L => levels.includes(L)) && keepLot(l)).sort((a, b) => LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level) || a.id - b.id);
         const multi = levels.length > 1;
         const cols = [
           { h: 'Lot', w: 105 },
@@ -554,11 +599,14 @@ const PV = (() => {
         document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       },
       logout: true,
+      plansAdmin: true,
     });
     let pend = false;
     const es = new EventSource('/api/events');
     es.addEventListener('change', () => { if (pend) return; pend = true; setTimeout(() => { pend = false; reload(); }, 200); });
     es.addEventListener('open', reload);
+    // Nouveau plan publié depuis l'onglet « Plans » : on recharge pour l'afficher
+    es.addEventListener('plan', () => { if (!document.body.classList.contains('admin-open')) location.reload(); });
     $('#logout').addEventListener('click', async () => { es.close(); await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); location.reload(); });
   }
   function showLogin() {

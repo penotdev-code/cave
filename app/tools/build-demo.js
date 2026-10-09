@@ -12,6 +12,7 @@ const body = html.slice(html.indexOf('<!--BODY-->') + 11, html.indexOf('<!--/BOD
 const css = pub('styles.css').replace(/@font-face[^\n]*\n/g, '');
 const appJs = pub('app.js').replace(/\/\* =+ Backend « serveur »[\s\S]*$/, '');
 const pdfJs = pub('pdf-writer.js');
+const renderJs = pub('plan-render.js');
 const plan = pub('plan.json');
 const backend = fs.readFileSync(path.join(__dirname, 'backend-artifact.js'), 'utf8');
 
@@ -27,6 +28,7 @@ ${body}
 window.PV_BACKEND = 'external';
 window.PV_PLAN = ${plan.trim()};
 ${pdfJs}
+${renderJs}
 ${appJs}
 ${backend}</script>
 `;

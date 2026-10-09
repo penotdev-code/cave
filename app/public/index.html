@@ -9,7 +9,9 @@
 <link rel="stylesheet" href="/styles.css">
 <script src="/vendor/xlsx.full.min.js" defer></script>
 <script src="/pdf-writer.js" defer></script>
+<script src="/plan-render.js" defer></script>
 <script src="/app.js" defer></script>
+<script src="/plans-admin.js" defer></script>
 </head>
 <body>
 <!--BODY-->
@@ -35,6 +37,7 @@
       <button type="button" class="btn" id="export">Exporter Excel</button>
       <button type="button" class="btn" id="export-pdf">Exporter PDF</button>
       <button type="button" class="link" id="history-btn">Historique</button>
+      <button type="button" class="link" id="plans-btn" hidden>Plans</button>
       <span class="who" id="who"></span>
       <button type="button" class="link" id="logout">Déconnexion</button>
     </div>
@@ -52,7 +55,12 @@
           <button type="button" data-color="dpe" aria-pressed="false">DPE</button>
         </div></div>
       </div>
-      <div class="plan-box"><svg id="plan" role="img" aria-label="Plan"></svg></div>
+      <div class="plan-box"><svg id="plan" role="img" aria-label="Plan"></svg>
+        <div class="zoom-ctl" id="zoom-ctl" hidden>
+          <button type="button" data-zoom="in" aria-label="Zoomer">+</button>
+          <button type="button" data-zoom="out" aria-label="Dézoomer">−</button>
+          <button type="button" data-zoom="fit" aria-label="Voir tout le niveau">⤢</button>
+        </div></div>
       <div class="legend" id="legend" aria-label="Légende, cliquer pour filtrer"></div>
     </section>
 
@@ -73,6 +81,74 @@
     </section>
   </main>
 </div>
+
+<!-- ============ ONGLET « PLANS » (comptes gestion) ============ -->
+<section class="admin" id="admin" hidden aria-label="Gestion des plans">
+  <header class="top">
+    <div class="brand"><b class="logo">Plans</b><span>Versions du plan, import du DWG, retouches</span></div>
+    <div class="actions"><button type="button" class="btn" id="admin-close">Retour au suivi</button></div>
+  </header>
+
+  <!-- Écran 1 : versions -->
+  <div id="adm-list" class="adm-list">
+    <div class="adm-cards">
+      <div class="adm-card">
+        <h2>Importer un plan du géomètre</h2>
+        <p class="muted small">Fichier AutoCAD (.dwg ou .dxf). Le plan est converti en brouillon : rien ne change pour les autres tant que vous ne le publiez pas.</p>
+        <label class="btn file-btn"><input type="file" id="adm-dwg-file" accept=".dwg,.dxf" hidden>Choisir le fichier DWG…</label>
+        <p class="adm-state" id="adm-import-state" hidden></p>
+      </div>
+      <div class="adm-card">
+        <h2>Listing de référence</h2>
+        <p class="small" id="adm-listing"></p>
+        <p class="muted small">Le classeur Excel des locaux (N° de lot, IDLOCAL, type, surface, étage) : il sert à l’import et aux contrôles.</p>
+        <label class="btn file-btn secondary"><input type="file" id="adm-listing-file" accept=".xlsx" hidden>Remplacer le listing…</label>
+      </div>
+    </div>
+    <h2 class="adm-h">Versions</h2>
+    <div id="adm-versions"></div>
+  </div>
+
+  <!-- Écran 2 : éditeur -->
+  <div id="adm-editor" class="adm-editor" hidden>
+    <div class="ed-bar">
+      <button type="button" class="link" id="ed-back">← Versions</button>
+      <input id="ed-label" class="ed-label" aria-label="Nom de la version" maxlength="120">
+      <span class="badge" id="ed-status"></span>
+      <span class="ed-saved" id="ed-saved"></span>
+      <span class="ed-spacer"></span>
+      <button type="button" class="tool" id="ed-undo" title="Annuler (Ctrl+Z)" disabled>↶ Annuler</button>
+      <button type="button" class="tool" id="ed-redo" title="Rétablir (Ctrl+Y)" disabled>↷ Rétablir</button>
+      <button type="button" class="tool" id="ed-shape" aria-pressed="false" disabled title="Retoucher la surface sélectionnée">✎ Retoucher la forme</button>
+      <button type="button" class="tool" id="ed-draw" aria-pressed="false" title="Dessiner une nouvelle surface">⬠ Dessiner</button>
+      <label class="chk small" title="Les points s’accrochent aux angles des murs et des autres lots"><input type="checkbox" id="ed-snap" checked> Aimant</label>
+      <button type="button" class="btn" id="ed-publish">Publier…</button>
+    </div>
+    <div class="ed-body">
+      <div class="ed-map">
+        <div class="tabs ed-levels" id="ed-levels" role="group" aria-label="Niveau"></div>
+        <p class="ed-hint" id="ed-hint" hidden></p>
+        <div class="ed-canvas"><svg id="adm-plan" role="img" aria-label="Plan en cours de retouche"></svg>
+          <div class="zoom-ctl">
+            <button type="button" data-ezoom="in" aria-label="Zoomer">+</button>
+            <button type="button" data-ezoom="out" aria-label="Dézoomer">−</button>
+            <button type="button" data-ezoom="fit" aria-label="Voir tout le niveau">⤢</button>
+          </div>
+        </div>
+        <p class="ed-legend small"><span class="lg lg-lot"></span>Lot <span class="lg lg-auto"></span>Rattachement auto <span class="lg lg-orphan"></span>À vérifier <span class="lg lg-hall"></span>Partie commune <span class="lg lg-data"></span>Lot suivi</p>
+      </div>
+      <aside class="ed-side">
+        <div class="ed-tabs" id="ed-tabs" role="group">
+          <button type="button" data-panel="check" aria-pressed="true">À vérifier <b id="ed-count-todo"></b></button>
+          <button type="button" data-panel="lots" aria-pressed="false">Lots <b id="ed-count-lots"></b></button>
+          <button type="button" data-panel="controls" aria-pressed="false">Contrôles <b id="ed-count-check"></b></button>
+          <button type="button" data-panel="item" aria-pressed="false" id="ed-tab-item" hidden>Sélection</button>
+        </div>
+        <div class="ed-panel" id="ed-panel"></div>
+      </aside>
+    </div>
+  </div>
+</section>
 
 <div class="overlay" id="history" hidden>
   <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="history-title">

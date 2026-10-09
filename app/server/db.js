@@ -52,6 +52,30 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS comments_lot ON comments(lot);
   CREATE INDEX IF NOT EXISTS journal_at ON journal(at);
+  -- Versions du plan : un seul « publié » à la fois (celui que tout le monde voit),
+  -- des brouillons en cours de retouche, des versions archivées (retour arrière possible).
+  CREATE TABLE IF NOT EXISTS plans (
+    id INTEGER PRIMARY KEY,
+    label TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL CHECK (status IN ('brouillon', 'publie', 'archive')),
+    data TEXT NOT NULL,
+    rapport TEXT,
+    rev INTEGER NOT NULL DEFAULT 1,
+    created TEXT NOT NULL,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    updated TEXT NOT NULL,
+    updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    published TEXT
+  );
+  -- Fichiers de référence (le listing Excel des locaux)
+  CREATE TABLE IF NOT EXISTS files (
+    name TEXT PRIMARY KEY,
+    filename TEXT NOT NULL,
+    data BLOB NOT NULL,
+    uploaded TEXT NOT NULL,
+    uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+  );
 `);
 
 /* ---------- mots de passe ---------- */
@@ -97,6 +121,22 @@ const q = {
   insComment: db.prepare('INSERT INTO comments (lot, txt, vis, at, user_id) VALUES (?, ?, ?, ?, ?)'),
   journal: db.prepare('SELECT id, lot, txt, at, user_id FROM journal ORDER BY at DESC, id DESC LIMIT 500'),
   insJournal: db.prepare('INSERT INTO journal (lot, txt, at, user_id) VALUES (?, ?, ?, ?)'),
+
+  plansList: db.prepare('SELECT id, label, source, status, rev, created, created_by, updated, updated_by, published, length(data) AS size FROM plans ORDER BY id DESC'),
+  planGet: db.prepare('SELECT * FROM plans WHERE id = ?'),
+  planActive: db.prepare("SELECT id, data FROM plans WHERE status = 'publie' ORDER BY published DESC, id DESC LIMIT 1"),
+  planInsert: db.prepare("INSERT INTO plans (label, source, status, data, rapport, created, created_by, updated, updated_by) VALUES (?, ?, 'brouillon', ?, ?, ?, ?, ?, ?)"),
+  planSave: db.prepare("UPDATE plans SET label = ?, data = ?, rev = rev + 1, updated = ?, updated_by = ? WHERE id = ? AND rev = ? AND status = 'brouillon'"),
+  planArchiveAll: db.prepare("UPDATE plans SET status = 'archive' WHERE status = 'publie'"),
+  planPublish: db.prepare("UPDATE plans SET status = 'publie', published = ? WHERE id = ?"),
+  planDelete: db.prepare("DELETE FROM plans WHERE id = ? AND status <> 'publie'"),
+  lotsWithData: db.prepare(`SELECT id FROM lots WHERE occ <> 'nr' OR travaux = 1 OR dpe <> ''
+    UNION SELECT DISTINCT lot FROM comments`),
+
+  fileGet: db.prepare('SELECT * FROM files WHERE name = ?'),
+  fileMeta: db.prepare('SELECT name, filename, uploaded, uploaded_by, length(data) AS size FROM files WHERE name = ?'),
+  filePut: db.prepare(`INSERT INTO files (name, filename, data, uploaded, uploaded_by) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(name) DO UPDATE SET filename = excluded.filename, data = excluded.data, uploaded = excluded.uploaded, uploaded_by = excluded.uploaded_by`),
 };
 
 function tx(fn) {
